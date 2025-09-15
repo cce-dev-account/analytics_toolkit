@@ -1,0 +1,166 @@
+/* Custom CSS for Analytics Toolkit Documentation */
+
+/* Improve code block styling */
+.highlight {
+    background: #f8f8f8;
+    border: 1px solid #e1e4e5;
+    border-radius: 4px;
+    margin: 1em 0;
+}
+
+.highlight pre {
+    padding: 12px;
+    overflow-x: auto;
+    font-size: 0.9em;
+    line-height: 1.4;
+}
+
+/* Improve admonition styling */
+.admonition {
+    margin: 1em 0;
+    padding: 12px;
+    border-left: 4px solid #ccc;
+    border-radius: 4px;
+}
+
+.admonition.note {
+    border-left-color: #6ab0de;
+    background-color: #e7f2fa;
+}
+
+.admonition.warning {
+    border-left-color: #f0b37e;
+    background-color: #ffedcc;
+}
+
+.admonition.tip {
+    border-left-color: #1abc9c;
+    background-color: #dbfaf4;
+}
+
+/* API documentation improvements */
+.py.class > dt {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 8px;
+}
+
+.py.method > dt,
+.py.function > dt {
+    background-color: #fafafa;
+    border-left: 3px solid #3498db;
+    padding: 6px 12px;
+    margin: 4px 0;
+}
+
+/* Improve table styling */
+table.docutils {
+    border-collapse: collapse;
+    margin: 1em 0;
+    width: 100%;
+}
+
+table.docutils th,
+table.docutils td {
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+table.docutils th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+/* Code inline styling */
+code.literal {
+    background-color: #f1f2f3;
+    border: 1px solid #d0d2d3;
+    border-radius: 3px;
+    padding: 2px 4px;
+    font-size: 0.9em;
+}
+
+/* Navigation improvements */
+.wy-nav-content {
+    max-width: 1200px;
+}
+
+/* Footer improvements */
+.rst-footer-buttons {
+    margin-top: 2em;
+    padding-top: 1em;
+    border-top: 1px solid #e1e4e5;
+}
+
+/* Version warning */
+.version-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 12px;
+    margin: 1em 0;
+}
+
+/* API parameter tables */
+.field-list {
+    margin: 1em 0;
+}
+
+.field-list dt {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.field-list dd {
+    margin-left: 20px;
+    margin-bottom: 8px;
+}
+
+/* Example code blocks */
+.example-code {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 16px;
+    margin: 1em 0;
+}
+
+.example-code .highlight {
+    background: transparent;
+    border: none;
+    margin: 0;
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+    .wy-table-responsive table td,
+    .wy-table-responsive table th {
+        white-space: normal !important;
+    }
+
+    .highlight pre {
+        font-size: 0.8em;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .highlight {
+        background: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+
+    .admonition.note {
+        background-color: #2a4a5c;
+        border-left-color: #4299e1;
+    }
+
+    .admonition.warning {
+        background-color: #5c4a2a;
+        border-left-color: #ed8936;
+    }
+}

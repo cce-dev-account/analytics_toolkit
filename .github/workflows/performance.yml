@@ -1,0 +1,245 @@
+name: Performance Testing
+
+on:
+  schedule:
+    # Run performance tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'tests/performance/**'
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+
+    - name: Install dependencies
+      run: |
+        poetry install --with dev
+        poetry add --group dev pytest-benchmark matplotlib
+
+    - name: Create performance test directory
+      run: |
+        mkdir -p tests/performance
+
+    - name: Create sample performance tests
+      run: |
+        cat > tests/performance/test_performance.py << 'EOF'
+        import pytest
+        import numpy as np
+        import pandas as pd
+        from analytics_toolkit.utils import describe_data, load_data, save_data
+        from analytics_toolkit.preprocessing import DataPreprocessor
+        import tempfile
+        import os
+
+        class TestPerformance:
+            def test_describe_data_performance(self, benchmark):
+                # Generate large dataset
+                data = pd.DataFrame({
+                    'col1': np.random.randn(100000),
+                    'col2': np.random.randint(0, 100, 100000),
+                    'col3': np.random.choice(['A', 'B', 'C'], 100000)
+                })
+
+                result = benchmark(describe_data, data)
+                assert 'shape' in result
+                assert result['shape'] == (100000, 3)
+
+            def test_preprocessing_performance(self, benchmark):
+                # Generate dataset for preprocessing
+                data = pd.DataFrame({
+                    'numeric1': np.random.randn(50000),
+                    'numeric2': np.random.randn(50000),
+                    'categorical': np.random.choice(['X', 'Y', 'Z'], 50000),
+                    'target': np.random.randint(0, 2, 50000)
+                })
+
+                preprocessor = DataPreprocessor()
+                result = benchmark(
+                    preprocessor.fit_transform,
+                    data,
+                    target_column='target'
+                )
+                assert result[0].shape[1] == 3  # 3 features after removing target
+
+            def test_csv_io_performance(self, benchmark):
+                # Test CSV read/write performance
+                data = pd.DataFrame({
+                    'col1': np.random.randn(25000),
+                    'col2': np.random.randn(25000),
+                    'col3': np.random.choice(['A', 'B', 'C', 'D'], 25000)
+                })
+
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    filepath = os.path.join(temp_dir, 'test.csv')
+
+                    def save_and_load():
+                        save_data(data, filepath)
+                        return load_data(filepath)
+
+                    result = benchmark(save_and_load)
+                    assert result.shape == data.shape
+        EOF
+
+    - name: Run performance benchmarks
+      run: |
+        poetry run pytest tests/performance/ --benchmark-only --benchmark-json=benchmark.json -v
+
+    - name: Generate performance report
+      run: |
+        poetry run python -c "
+        import json
+        import matplotlib.pyplot as plt
+        import numpy as np
+
+        with open('benchmark.json', 'r') as f:
+            data = json.load(f)
+
+        benchmarks = data['benchmarks']
+        names = [b['name'] for b in benchmarks]
+        means = [b['stats']['mean'] for b in benchmarks]
+
+        plt.figure(figsize=(12, 6))
+        bars = plt.bar(range(len(names)), means)
+        plt.xlabel('Benchmark Tests')
+        plt.ylabel('Time (seconds)')
+        plt.title('Performance Benchmark Results')
+        plt.xticks(range(len(names)), [n.split('::')[-1] for n in names], rotation=45, ha='right')
+
+        # Add value labels on bars
+        for bar, mean in zip(bars, means):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + bar.get_height()*0.01,
+                    f'{mean:.3f}s', ha='center', va='bottom')
+
+        plt.tight_layout()
+        plt.savefig('benchmark_results.png', dpi=300, bbox_inches='tight')
+        plt.close()
+
+        # Generate summary
+        print('Performance Summary:')
+        for name, mean in zip(names, means):
+            test_name = name.split('::')[-1]
+            print(f'{test_name}: {mean:.3f}s')
+        "
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      with:
+        name: performance-results
+        path: |
+          benchmark.json
+          benchmark_results.png
+
+    - name: Compare with baseline (if exists)
+      run: |
+        if [ -f "baseline_benchmark.json" ]; then
+          echo "Comparing with baseline performance..."
+          poetry run python -c "
+          import json
+
+          with open('benchmark.json', 'r') as f:
+              current = json.load(f)
+          with open('baseline_benchmark.json', 'r') as f:
+              baseline = json.load(f)
+
+          current_benchmarks = {b['name']: b['stats']['mean'] for b in current['benchmarks']}
+          baseline_benchmarks = {b['name']: b['stats']['mean'] for b in baseline['benchmarks']}
+
+          print('Performance Comparison:')
+          for name in current_benchmarks:
+              if name in baseline_benchmarks:
+                  current_time = current_benchmarks[name]
+                  baseline_time = baseline_benchmarks[name]
+                  change = ((current_time - baseline_time) / baseline_time) * 100
+                  status = '🔴' if change > 10 else '🟡' if change > 5 else '🟢'
+                  print(f'{status} {name.split(\"::\")[-1]}: {change:+.1f}% ({current_time:.3f}s vs {baseline_time:.3f}s)')
+          "
+        else
+          echo "No baseline found, saving current results as baseline"
+          cp benchmark.json baseline_benchmark.json
+        fi
+
+  memory-profiling:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+
+    - name: Install dependencies
+      run: |
+        poetry install --with dev
+        poetry add --group dev memory-profiler psutil
+
+    - name: Create memory profiling script
+      run: |
+        cat > memory_profile.py << 'EOF'
+        import numpy as np
+        import pandas as pd
+        from memory_profiler import profile
+        from analytics_toolkit.utils import describe_data
+        from analytics_toolkit.preprocessing import DataPreprocessor
+
+        @profile
+        def test_memory_usage():
+            # Test memory usage with different data sizes
+            sizes = [1000, 10000, 50000]
+
+            for size in sizes:
+                print(f"\nTesting with {size} rows...")
+
+                # Create test data
+                data = pd.DataFrame({
+                    'numeric1': np.random.randn(size),
+                    'numeric2': np.random.randn(size),
+                    'categorical': np.random.choice(['A', 'B', 'C'], size),
+                    'target': np.random.randint(0, 2, size)
+                })
+
+                # Test describe_data
+                result = describe_data(data)
+
+                # Test preprocessing
+                preprocessor = DataPreprocessor()
+                X, y = preprocessor.fit_transform(data, target_column='target')
+
+                print(f"Processed {size} rows successfully")
+
+        if __name__ == "__main__":
+            test_memory_usage()
+        EOF
+
+    - name: Run memory profiling
+      run: |
+        poetry run python memory_profile.py > memory_profile_results.txt 2>&1 || true
+
+    - name: Upload memory profiling results
+      uses: actions/upload-artifact@v3
+      with:
+        name: memory-profile
+        path: memory_profile_results.txt

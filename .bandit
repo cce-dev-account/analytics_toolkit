@@ -1,0 +1,37 @@
+[bandit]
+# Bandit configuration file for security scanning
+# https://bandit.readthedocs.io/en/latest/config.html
+
+# Directories to scan
+exclude_dirs = [
+    './tests',
+    './docs',
+    './build',
+    './dist',
+    './.venv',
+    './.git',
+    './node_modules'
+]
+
+# Test IDs to skip
+skips = [
+    # B101: Test for use of assert - assert is ok in tests and development
+    # B601: Test for shell injection within Paramiko - not using Paramiko
+    # B602: Test for use of popen with shell equals true - subprocess usage is careful
+]
+
+# Test severity levels to report
+# LOW, MEDIUM, HIGH
+severity = "medium"
+
+# Confidence levels to report
+# LOW, MEDIUM, HIGH
+confidence = "medium"
+
+# Output format options: csv, json, txt, xml, yaml
+format = "json"
+
+# Additional options
+recursive = true
+aggregate = "file"
+number = 5

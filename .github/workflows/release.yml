@@ -1,0 +1,398 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0, v2.1.0, etc.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 1.0.0)'
+        required: true
+        type: string
+      pre_release:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+      tag: ${{ steps.get-version.outputs.tag }}
+      is_prerelease: ${{ steps.get-version.outputs.is_prerelease }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for changelog generation
+
+    - name: Get version from tag or input
+      id: get-version
+      run: |
+        if [ "${{ github.event_name }}" = "push" ]; then
+          # Extract version from tag
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          IS_PRERELEASE="false"
+
+          # Check if it's a pre-release (contains alpha, beta, rc)
+          if [[ "$VERSION" =~ (alpha|beta|rc) ]]; then
+            IS_PRERELEASE="true"
+          fi
+        else
+          # Manual workflow dispatch
+          VERSION="${{ github.event.inputs.version }}"
+          TAG="v${VERSION}"
+          IS_PRERELEASE="${{ github.event.inputs.pre_release }}"
+        fi
+
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "tag=${TAG}" >> $GITHUB_OUTPUT
+        echo "is_prerelease=${IS_PRERELEASE}" >> $GITHUB_OUTPUT
+
+        echo "Release version: ${VERSION}"
+        echo "Release tag: ${TAG}"
+        echo "Pre-release: ${IS_PRERELEASE}"
+
+    - name: Validate version format
+      run: |
+        VERSION="${{ steps.get-version.outputs.version }}"
+        if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[0-9]+)?)?$ ]]; then
+          echo "❌ Invalid version format: $VERSION"
+          echo "Expected format: X.Y.Z or X.Y.Z-suffix"
+          exit 1
+        fi
+        echo "✅ Version format is valid: $VERSION"
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Update version in pyproject.toml
+      run: |
+        VERSION="${{ steps.get-version.outputs.version }}"
+        poetry version $VERSION
+
+        # Verify the version was set correctly
+        ACTUAL_VERSION=$(poetry version --short)
+        if [ "$ACTUAL_VERSION" != "$VERSION" ]; then
+          echo "❌ Version mismatch: expected $VERSION, got $ACTUAL_VERSION"
+          exit 1
+        fi
+        echo "✅ Version updated to: $ACTUAL_VERSION"
+
+    - name: Install dependencies
+      run: |
+        poetry install --with dev
+
+    - name: Run full test suite
+      run: |
+        poetry run pytest --cov=src/analytics_toolkit --cov-fail-under=80 -v
+        echo "✅ All tests passed"
+
+    - name: Run quality checks
+      run: |
+        echo "Running code quality checks..."
+        poetry run black --check .
+        poetry run ruff check .
+        poetry run mypy src/ --ignore-missing-imports
+        echo "✅ All quality checks passed"
+
+    - name: Build package
+      run: |
+        poetry build
+        echo "✅ Package built successfully"
+
+    - name: Verify package contents
+      run: |
+        poetry run pip install dist/*.whl
+        python -c "import analytics_toolkit; print(f'✅ Package imports successfully: {analytics_toolkit.__version__}')"
+
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    needs: validate-release
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        TAG="${{ needs.validate-release.outputs.tag }}"
+
+        # Get the previous tag
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+
+        echo "Generating changelog for version $VERSION"
+        echo "Previous tag: ${PREV_TAG:-"(initial release)"}"
+
+        # Generate changelog
+        if [ -z "$PREV_TAG" ]; then
+          # First release
+          CHANGELOG="## 🎉 Initial Release\n\nFirst release of Analytics Toolkit!\n\n### Features\n- Complete Python analytics toolkit with PyTorch support\n- Data processing and preprocessing utilities\n- Machine learning models and training utilities\n- Comprehensive test suite and CI/CD pipeline"
+        else
+          # Generate changelog from commits
+          CHANGELOG="## 🚀 What's Changed\n\n"
+
+          # Get commits between tags
+          git log --pretty=format:"- %s" ${PREV_TAG}..HEAD --no-merges | while read line; do
+            if [[ $line =~ ^-[[:space:]]*feat ]]; then
+              echo "### ✨ Features" >> /tmp/features.md
+              echo "$line" | sed 's/^- feat[:(]/- /' | sed 's/)://' >> /tmp/features.md
+            elif [[ $line =~ ^-[[:space:]]*fix ]]; then
+              echo "### 🐛 Bug Fixes" >> /tmp/fixes.md
+              echo "$line" | sed 's/^- fix[:(]/- /' | sed 's/)://' >> /tmp/fixes.md
+            elif [[ $line =~ ^-[[:space:]]*docs ]]; then
+              echo "### 📚 Documentation" >> /tmp/docs.md
+              echo "$line" | sed 's/^- docs[:(]/- /' | sed 's/)://' >> /tmp/docs.md
+            else
+              echo "### 🔧 Other Changes" >> /tmp/other.md
+              echo "$line" >> /tmp/other.md
+            fi
+          done
+
+          # Combine sections
+          for file in /tmp/features.md /tmp/fixes.md /tmp/docs.md /tmp/other.md; do
+            if [ -f "$file" ]; then
+              cat "$file" >> /tmp/changelog.md
+              echo "" >> /tmp/changelog.md
+            fi
+          done
+
+          if [ -f "/tmp/changelog.md" ]; then
+            CHANGELOG="## 🚀 What's Changed\n\n$(cat /tmp/changelog.md)"
+          else
+            CHANGELOG="## 🚀 What's Changed\n\n- Various improvements and updates"
+          fi
+        fi
+
+        # Add installation instructions
+        CHANGELOG="$CHANGELOG\n\n## 📦 Installation\n\n\`\`\`bash\npip install analytics-toolkit==$VERSION\n\`\`\`\n\n**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}"
+
+        # Save changelog (escape for GitHub output)
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo -e "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [validate-release, generate-changelog]
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Update version
+      run: |
+        poetry version ${{ needs.validate-release.outputs.version }}
+
+    - name: Build package
+      run: |
+        poetry build
+        echo "✅ Package built for PyPI publication"
+
+    - name: Check package with twine
+      run: |
+        pip install twine
+        twine check dist/*
+        echo "✅ Package validation passed"
+
+    - name: Publish to PyPI
+      env:
+        POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        poetry config pypi-token.pypi $POETRY_PYPI_TOKEN_PYPI
+        poetry publish
+        echo "✅ Package published to PyPI"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist-artifacts
+        path: dist/
+        retention-days: 30
+
+  create-github-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-release, generate-changelog, publish-pypi]
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: dist-artifacts
+        path: dist/
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.validate-release.outputs.tag }}
+        name: "Release ${{ needs.validate-release.outputs.version }}"
+        body: ${{ needs.generate-changelog.outputs.changelog }}
+        files: |
+          dist/*.whl
+          dist/*.tar.gz
+        prerelease: ${{ needs.validate-release.outputs.is_prerelease == 'true' }}
+        draft: false
+        generate_release_notes: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-test-pypi:
+    name: Publish to Test PyPI
+    runs-on: ubuntu-latest
+    needs: [validate-release, generate-changelog]
+    if: needs.validate-release.outputs.is_prerelease == 'true'
+    environment: test-pypi
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+
+    - name: Update version
+      run: |
+        poetry version ${{ needs.validate-release.outputs.version }}
+
+    - name: Build package
+      run: |
+        poetry build
+
+    - name: Publish to Test PyPI
+      env:
+        POETRY_PYPI_TOKEN_TEST_PYPI: ${{ secrets.TEST_PYPI_API_TOKEN }}
+      run: |
+        poetry config repositories.test-pypi https://test.pypi.org/legacy/
+        poetry config pypi-token.test-pypi $POETRY_PYPI_TOKEN_TEST_PYPI
+        poetry publish --repository test-pypi
+        echo "✅ Package published to Test PyPI"
+
+  update-documentation:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+    needs: [validate-release, publish-pypi]
+    if: needs.validate-release.outputs.is_prerelease == 'false'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+
+    - name: Install dependencies
+      run: |
+        poetry install --with dev
+
+    - name: Update version in docs
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        # Update version in documentation files if they exist
+        if [ -f "docs/conf.py" ]; then
+          sed -i "s/release = .*/release = '$VERSION'/" docs/conf.py
+          sed -i "s/version = .*/version = '${VERSION%.*}'/" docs/conf.py
+        fi
+
+    - name: Build documentation
+      run: |
+        if [ -d "docs" ]; then
+          poetry add --group dev sphinx sphinx-rtd-theme || true
+          poetry run sphinx-build -b html docs docs/_build/html
+          echo "✅ Documentation built"
+        else
+          echo "ℹ️ No docs directory found, skipping documentation build"
+        fi
+
+    - name: Deploy to GitHub Pages
+      if: success()
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/_build/html
+        enable_jekyll: false
+
+  notify-release:
+    name: Notify Release Status
+    runs-on: ubuntu-latest
+    needs: [validate-release, publish-pypi, create-github-release, update-documentation]
+    if: always()
+
+    steps:
+    - name: Release Success Notification
+      if: ${{ needs.publish-pypi.result == 'success' && needs.create-github-release.result == 'success' }}
+      run: |
+        VERSION="${{ needs.validate-release.outputs.version }}"
+        echo "🎉 Release $VERSION completed successfully!"
+        echo "✅ PyPI: Published"
+        echo "✅ GitHub Release: Created"
+        echo "✅ Documentation: ${{ needs.update-documentation.result }}"
+        echo ""
+        echo "📦 Install with: pip install analytics-toolkit==$VERSION"
+        echo "🔗 Release: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-release.outputs.tag }}"
+        echo "📖 PyPI: https://pypi.org/project/analytics-toolkit/$VERSION/"
+
+    - name: Release Failure Notification
+      if: ${{ needs.publish-pypi.result == 'failure' || needs.create-github-release.result == 'failure' }}
+      run: |
+        echo "❌ Release failed!"
+        echo "🔍 PyPI: ${{ needs.publish-pypi.result }}"
+        echo "🔍 GitHub Release: ${{ needs.create-github-release.result }}"
+        echo "🔍 Documentation: ${{ needs.update-documentation.result }}"
+        exit 1

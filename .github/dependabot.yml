@@ -1,0 +1,123 @@
+version: 2
+updates:
+  # Python dependencies (Poetry)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 15
+    reviewers:
+      - "analytics-team"
+    assignees:
+      - "analytics-team"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+    groups:
+      # Group PyTorch ecosystem updates
+      pytorch:
+        patterns:
+          - "torch*"
+          - "torchvision*"
+          - "torchaudio*"
+      # Group data science core libraries
+      data-science:
+        patterns:
+          - "numpy*"
+          - "pandas*"
+          - "scipy*"
+          - "scikit-learn*"
+          - "matplotlib*"
+          - "seaborn*"
+      # Group development tools
+      dev-tools:
+        patterns:
+          - "pytest*"
+          - "black*"
+          - "ruff*"
+          - "mypy*"
+          - "pre-commit*"
+      # Group security tools
+      security:
+        patterns:
+          - "bandit*"
+          - "safety*"
+          - "pip-audit*"
+          - "semgrep*"
+      # Group documentation tools
+      docs:
+        patterns:
+          - "sphinx*"
+          - "myst-parser*"
+          - "doc8*"
+    ignore:
+      # Ignore major version updates for stable core dependencies
+      - dependency-name: "numpy"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pandas"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "torch"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "scikit-learn"
+        update-types: ["version-update:semver-major"]
+      # Allow patch and minor updates for all
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    allow:
+      # Allow security updates for all dependencies
+      - dependency-type: "all"
+        update-type: "security"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "analytics-team"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    groups:
+      # Group GitHub Actions by function
+      setup-actions:
+        patterns:
+          - "actions/setup-*"
+          - "actions/checkout*"
+      deployment-actions:
+        patterns:
+          - "actions/deploy-*"
+          - "peaceiris/actions-*"
+      security-actions:
+        patterns:
+          - "github/codeql-action*"
+          - "ossf/scorecard-action*"
+
+  # Docker dependencies (if using Docker)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "docker"
+    labels:
+      - "dependencies"
+      - "docker"

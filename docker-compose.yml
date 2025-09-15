@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  analytics-toolkit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: analytics-toolkit-dev
+    volumes:
+      - .:/app
+      - analytics-data:/app/data
+      - analytics-models:/app/models
+    ports:
+      - "8888:8888"  # Jupyter
+      - "6006:6006"  # TensorBoard
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+    command: >
+      bash -c "
+        poetry install --with dev &&
+        jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root
+      "
+    networks:
+      - analytics-network
+
+  jupyter:
+    image: jupyter/scipy-notebook:latest
+    container_name: analytics-jupyter
+    ports:
+      - "8889:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - analytics-data:/home/jovyan/data
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    networks:
+      - analytics-network
+
+  mlflow:
+    image: python:3.12-slim
+    container_name: analytics-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - analytics-mlflow:/mlflow
+    command: >
+      bash -c "
+        pip install mlflow[extras] &&
+        mlflow server --host 0.0.0.0 --port 5000 --default-artifact-root /mlflow
+      "
+    networks:
+      - analytics-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: analytics-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - analytics-redis:/data
+    networks:
+      - analytics-network
+
+volumes:
+  analytics-data:
+    driver: local
+  analytics-models:
+    driver: local
+  analytics-mlflow:
+    driver: local
+  analytics-redis:
+    driver: local
+
+networks:
+  analytics-network:
+    driver: bridge

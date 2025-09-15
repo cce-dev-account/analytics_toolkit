@@ -1,0 +1,344 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - 'src/**'
+      - 'pyproject.toml'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'docs/**'
+      - 'src/**'
+  workflow_dispatch:
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for proper version detection
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: latest
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v3
+      with:
+        path: .venv
+        key: venv-docs-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      run: |
+        poetry install --with dev
+        poetry add --group dev sphinx sphinx-rtd-theme myst-parser sphinx-autodoc-typehints
+
+    - name: Install package in development mode
+      run: |
+        poetry install
+
+    - name: Create docs directories
+      run: |
+        mkdir -p docs/_static docs/_templates
+
+    - name: Build API documentation
+      run: |
+        # Generate API documentation automatically
+        poetry run sphinx-apidoc -o docs/api src/analytics_toolkit --force --module-first
+
+    - name: Build documentation
+      run: |
+        cd docs
+        poetry run sphinx-build -b html . _build/html -W --keep-going
+
+    - name: Check documentation links
+      run: |
+        cd docs
+        poetry run sphinx-build -b linkcheck . _build/linkcheck || true
+
+    - name: Upload documentation artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation
+        path: docs/_build/html/
+        retention-days: 30
+
+    - name: Upload Pages artifact
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: docs/_build/html/
+
+  deploy-docs:
+    name: Deploy to GitHub Pages
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: build-docs
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
+
+  test-docs:
+    name: Test Documentation Build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+
+    - name: Install dependencies
+      run: |
+        poetry install --with dev
+        poetry add --group dev sphinx sphinx-rtd-theme myst-parser sphinx-autodoc-typehints
+
+    - name: Install package
+      run: |
+        poetry install
+
+    - name: Test documentation build
+      run: |
+        cd docs
+        poetry run sphinx-build -b html . _build/html -W
+
+    - name: Check for common documentation issues
+      run: |
+        # Check for broken internal links
+        poetry run python -c "
+        import os
+        import re
+
+        print('🔍 Checking for common documentation issues...')
+
+        # Check for missing files referenced in toctree
+        for root, dirs, files in os.walk('docs'):
+            for file in files:
+                if file.endswith('.rst'):
+                    filepath = os.path.join(root, file)
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        # Check for references to non-existent files
+                        toctree_matches = re.findall(r'^\s+(\w+/?\w*)', content, re.MULTILINE)
+                        for match in toctree_matches:
+                            if not match.startswith('..') and '/' not in match:
+                                expected_file = os.path.join(root, match + '.rst')
+                                if not os.path.exists(expected_file):
+                                    print(f'⚠️  Potential missing file: {expected_file}')
+
+        print('✅ Documentation check completed')
+        "
+
+  docs-preview:
+    name: Preview Documentation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: test-docs
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+
+    - name: Install dependencies
+      run: |
+        poetry install --with dev
+        poetry add --group dev sphinx sphinx-rtd-theme myst-parser sphinx-autodoc-typehints
+
+    - name: Install package
+      run: |
+        poetry install
+
+    - name: Build documentation
+      run: |
+        cd docs
+        poetry run sphinx-build -b html . _build/html
+
+    - name: Upload preview
+      uses: actions/upload-artifact@v3
+      with:
+        name: docs-preview-pr-${{ github.event.number }}
+        path: docs/_build/html/
+        retention-days: 7
+
+    - name: Comment PR with preview link
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const { owner, repo } = context.repo;
+          const pr_number = context.payload.pull_request.number;
+
+          const comment = `## 📚 Documentation Preview
+
+          The documentation for this PR has been built and is available as an artifact.
+
+          **Download Link:** [docs-preview-pr-${pr_number}](https://github.com/${owner}/${repo}/actions/runs/${context.runId})
+
+          To view the documentation:
+          1. Download the \`docs-preview-pr-${pr_number}\` artifact from the link above
+          2. Extract the ZIP file
+          3. Open \`index.html\` in your browser
+
+          ---
+          *This comment is automatically updated on each push to the PR.*`;
+
+          // Check if we already have a comment
+          const comments = await github.rest.issues.listComments({
+            owner,
+            repo,
+            issue_number: pr_number,
+          });
+
+          const existingComment = comments.data.find(
+            comment => comment.body.includes('📚 Documentation Preview')
+          );
+
+          if (existingComment) {
+            await github.rest.issues.updateComment({
+              owner,
+              repo,
+              comment_id: existingComment.id,
+              body: comment,
+            });
+          } else {
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pr_number,
+              body: comment,
+            });
+          }
+
+  docs-health-check:
+    name: Documentation Health Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.12"
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+
+    - name: Install dependencies
+      run: |
+        poetry install --with dev
+        poetry add --group dev sphinx sphinx-rtd-theme myst-parser sphinx-autodoc-typehints doc8
+
+    - name: Check documentation style
+      run: |
+        # Check RST syntax and style
+        poetry run doc8 docs --max-line-length 100 || true
+
+    - name: Check for TODO items in docs
+      run: |
+        echo "🔍 Checking for TODO items in documentation..."
+        TODO_COUNT=$(grep -r "TODO\|FIXME\|XXX" docs/ --include="*.rst" --include="*.md" | wc -l || echo "0")
+        if [ "$TODO_COUNT" -gt 0 ]; then
+          echo "⚠️  Found $TODO_COUNT TODO items in documentation:"
+          grep -r "TODO\|FIXME\|XXX" docs/ --include="*.rst" --include="*.md" || true
+        else
+          echo "✅ No TODO items found in documentation"
+        fi
+
+    - name: Generate documentation statistics
+      run: |
+        poetry run python -c "
+        import os
+
+        print('📊 Documentation Statistics')
+        print('=' * 40)
+
+        rst_files = 0
+        md_files = 0
+        total_lines = 0
+
+        for root, dirs, files in os.walk('docs'):
+            for file in files:
+                if file.endswith('.rst'):
+                    rst_files += 1
+                    with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+                        total_lines += len(f.readlines())
+                elif file.endswith('.md'):
+                    md_files += 1
+                    with open(os.path.join(root, file), 'r', encoding='utf-8') as f:
+                        total_lines += len(f.readlines())
+
+        print(f'RST files: {rst_files}')
+        print(f'Markdown files: {md_files}')
+        print(f'Total documentation lines: {total_lines}')
+        print(f'Average lines per file: {total_lines // (rst_files + md_files) if (rst_files + md_files) > 0 else 0}')
+        "
+
+  notify-docs-status:
+    name: Notify Documentation Status
+    runs-on: ubuntu-latest
+    needs: [build-docs, test-docs, docs-health-check]
+    if: always()
+
+    steps:
+    - name: Documentation Success
+      if: ${{ needs.build-docs.result == 'success' && needs.test-docs.result == 'success' }}
+      run: |
+        echo "✅ Documentation build completed successfully!"
+        echo "📖 Documentation will be available at: https://your-username.github.io/analytics-toolkit/"
+
+    - name: Documentation Failure
+      if: ${{ needs.build-docs.result == 'failure' || needs.test-docs.result == 'failure' }}
+      run: |
+        echo "❌ Documentation build failed!"
+        echo "🔍 Build status: ${{ needs.build-docs.result }}"
+        echo "🔍 Test status: ${{ needs.test-docs.result }}"
+        exit 1
