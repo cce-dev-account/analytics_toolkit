@@ -2,7 +2,6 @@
 Statistical computation functions for PyTorch regression module.
 """
 
-
 import numpy as np
 import torch
 from scipy import stats

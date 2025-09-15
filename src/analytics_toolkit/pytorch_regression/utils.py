@@ -2,7 +2,6 @@
 Utility functions for PyTorch regression module.
 """
 
-
 import numpy as np
 import pandas as pd
 import torch
@@ -101,9 +100,11 @@ def create_dummy_variables(
             if col in mappings:
                 # Use existing mappings for consistency
                 categories = mappings[col]
+
                 # Handle unseen categories by mapping to all zeros (reference category)
                 def map_categories(x, cats=categories):
                     return x if x in cats else cats[0]
+
                 df_col = df_encoded[col].map(map_categories)
             else:
                 categories = sorted(df_encoded[col].unique())
@@ -114,7 +115,9 @@ def create_dummy_variables(
             # If we have existing mappings, ensure consistent columns
             if col in mappings:
                 # Create all possible dummy columns based on training data
-                expected_categories = mappings[col][1:]  # Skip first (reference) category
+                expected_categories = mappings[col][
+                    1:
+                ]  # Skip first (reference) category
                 expected_columns = [f"{col}_{cat}" for cat in expected_categories]
 
                 # Create dummies for current data

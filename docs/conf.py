@@ -128,7 +128,7 @@ autodoc_mock_imports = [
     "statsmodels",
     "sklearn",
     "scipy",
-    "plotly"
+    "plotly",
 ]
 
 # -- Options for autosummary extension ---------------------------------------

@@ -128,7 +128,6 @@ class LinearRegression(BaseRegression):
         """
         # Add intercept if needed
         X_with_intercept = self._add_intercept(X)
-        n_features = X_with_intercept.shape[1]
 
         # Store number of observations
         self.n_obs_ = X.shape[0]
@@ -263,7 +262,7 @@ class LinearRegression(BaseRegression):
 
         # Optimize
         prev_loss = float("inf")
-        for i in range(self.max_iter):
+        for _ in range(self.max_iter):
             optimizer.step(closure)
 
             with torch.no_grad():
@@ -322,8 +321,6 @@ class LinearRegression(BaseRegression):
             self.standard_errors_ = compute_standard_errors(self.covariance_matrix_)
 
         # Compute model statistics
-        y_true_np = y.detach().cpu().numpy()
-        y_pred_np = y_pred.detach().cpu().numpy()
 
         # R-squared
         ss_res = torch.sum(residuals**2).item()

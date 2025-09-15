@@ -29,9 +29,7 @@ class TabularDataset(Dataset):
     def __len__(self) -> int:
         return len(self.X)
 
-    def __getitem__(
-        self, idx: int
-    ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         if self.y is not None:
             return self.X[idx], self.y[idx]
         return self.X[idx]

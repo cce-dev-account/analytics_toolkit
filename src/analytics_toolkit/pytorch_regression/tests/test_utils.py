@@ -243,7 +243,9 @@ class TestUtils:
         # Test single numeric column (should be detected as categorical due to low cardinality)
         single_col_df = pd.DataFrame({"a": [1, 2, 3]})
         categorical_cols = detect_categorical_columns(single_col_df)
-        assert categorical_cols == ["a"]  # Small integer range is considered categorical
+        assert categorical_cols == [
+            "a"
+        ]  # Small integer range is considered categorical
 
         # Test all categorical
         all_cat_df = pd.DataFrame({"cat1": ["A", "B", "C"], "cat2": ["X", "Y", "Z"]})

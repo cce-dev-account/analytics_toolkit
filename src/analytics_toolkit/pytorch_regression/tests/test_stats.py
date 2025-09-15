@@ -54,7 +54,9 @@ class TestStats:
         assert torch.all(std_errors_numpy > 0)
 
         # Results should be similar
-        torch.testing.assert_close(std_errors_torch, std_errors_numpy, rtol=1e-5, atol=1e-8)
+        torch.testing.assert_close(
+            std_errors_torch, std_errors_numpy, rtol=1e-5, atol=1e-8
+        )
 
         # Should be square root of diagonal
         expected = torch.sqrt(torch.diag(sample_covariance_matrix))
@@ -275,7 +277,9 @@ class TestStats:
         # Test studentized residuals (simplified version)
         student_residuals = compute_residuals(y_true, y_pred, "studentized")
         # Should be same as standardized in this simplified implementation
-        torch.testing.assert_close(student_residuals, std_residuals, rtol=1e-5, atol=1e-8)
+        torch.testing.assert_close(
+            student_residuals, std_residuals, rtol=1e-5, atol=1e-8
+        )
 
         # Test invalid residual type
         with pytest.raises(ValueError):

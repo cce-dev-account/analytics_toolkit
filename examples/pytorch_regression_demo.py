@@ -288,7 +288,7 @@ def main():
         performance_comparison()
 
         # Statistical features
-        statistical_model = statistical_features_demo()
+        statistical_features_demo()
 
         # Regularization demo
         regularization_demo()
