@@ -3,6 +3,7 @@ Logistic regression implementation with statistical inference.
 """
 
 import warnings
+from typing import Any
 
 import numpy as np
 import torch
@@ -67,6 +68,12 @@ class LogisticRegression(BaseRegression):
         valid_solvers = ["lbfgs", "adam", "sgd"]
         if self.solver not in valid_solvers:
             raise ValueError(f"solver must be one of {valid_solvers}")
+
+    def get_params(self, deep: bool = True) -> dict[str, Any]:
+        """Get parameters for this estimator."""
+        params = super().get_params(deep)
+        params["solver"] = self.solver
+        return params
 
     def _validate_targets(self, y: torch.Tensor) -> torch.Tensor:
         """

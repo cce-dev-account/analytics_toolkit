@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import torch
-
-from ..utils import (
+from analytics_toolkit.pytorch_regression.utils import (
     calculate_vif,
     check_input_consistency,
     create_dummy_variables,

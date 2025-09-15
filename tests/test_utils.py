@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
-
 from analytics_toolkit.utils import describe_data, load_data, save_data
 
 
