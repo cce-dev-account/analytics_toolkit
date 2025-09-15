@@ -122,7 +122,14 @@ autodoc_member_order = "bysource"
 autodoc_default_flags = ["members", "undoc-members", "show-inheritance"]
 
 # Mock imports for modules that might not be available during doc building
-autodoc_mock_imports = []
+autodoc_mock_imports = [
+    "torch",
+    "torchvision",
+    "statsmodels",
+    "sklearn",
+    "scipy",
+    "plotly"
+]
 
 # -- Options for autosummary extension ---------------------------------------
 

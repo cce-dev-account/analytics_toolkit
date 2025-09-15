@@ -118,7 +118,7 @@ def create_dummy_variables(
                 expected_columns = [f"{col}_{cat}" for cat in expected_categories]
 
                 # Create dummies for current data
-                dummies = pd.get_dummies(df_col, prefix=col, drop_first=True)
+                dummies = pd.get_dummies(df_col, prefix=col, drop_first=True, dtype=int)
 
                 # Ensure all expected columns exist (fill missing with zeros)
                 for expected_col in expected_columns:
@@ -128,7 +128,7 @@ def create_dummy_variables(
                 # Reorder columns to match expected order
                 dummies = dummies.reindex(columns=expected_columns, fill_value=0)
             else:
-                dummies = pd.get_dummies(df_col, prefix=col, drop_first=True)
+                dummies = pd.get_dummies(df_col, prefix=col, drop_first=True, dtype=int)
 
             # Remove original column and add dummies
             df_encoded = df_encoded.drop(columns=[col])
