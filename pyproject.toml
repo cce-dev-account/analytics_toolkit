@@ -61,6 +61,9 @@ ignore = [
     "N812",  # Lowercase imported as non-lowercase (statsmodels convention)
 ]
 
+[tool.ruff.lint.mccabe]
+max-complexity = 15  # Increased from default 10 to be more lenient for ML code
+
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = false
