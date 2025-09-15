@@ -1,0 +1,199 @@
+name: 🐛 Bug Report
+description: Create a report to help us improve the analytics toolkit
+title: "[BUG] "
+labels: ["bug", "triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug! Please fill out the sections below to help us understand and reproduce the issue.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues to ensure this bug hasn't been reported
+          required: true
+        - label: I have read the [Contributing Guidelines](../../CONTRIBUTING.md)
+          required: true
+        - label: I am using a supported Python version (3.11 or 3.12)
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 🐛 Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe the bug...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 🔄 Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Import the module...
+        2. Call the function with...
+        3. Observe the error...
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: ✅ Expected Behavior
+      description: A clear and concise description of what you expected to happen
+      placeholder: I expected...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: ❌ Actual Behavior
+      description: A clear and concise description of what actually happened
+      placeholder: Instead, what happened was...
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: 💻 Code Sample
+      description: Minimal code to reproduce the issue
+      placeholder: |
+        ```python
+        import analytics_toolkit
+
+        # Your code that demonstrates the bug
+        ```
+      render: python
+
+  - type: textarea
+    id: error
+    attributes:
+      label: 🚨 Error Output
+      description: If applicable, paste the full error message or traceback
+      placeholder: |
+        Traceback (most recent call last):
+          File "example.py", line 1, in <module>
+            ...
+        Error: ...
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: 📦 Package Version
+      description: What version of analytics-toolkit are you using?
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python-version
+    attributes:
+      label: 🐍 Python Version
+      description: What version of Python are you running?
+      options:
+        - "3.12"
+        - "3.11"
+        - "Other (please specify in additional context)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: 💻 Operating System
+      description: What operating system are you using?
+      options:
+        - "Windows"
+        - "macOS"
+        - "Linux (Ubuntu)"
+        - "Linux (Other)"
+        - "Other (please specify in additional context)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation
+    attributes:
+      label: 📦 Installation Method
+      description: How did you install the package?
+      options:
+        - "pip"
+        - "poetry"
+        - "conda"
+        - "Development (cloned repo)"
+        - "Other (please specify in additional context)"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: components
+    attributes:
+      label: 🧩 Affected Components
+      description: Which components are affected by this bug?
+      options:
+        - label: Data processing modules
+        - label: Machine learning utilities
+        - label: PyTorch integration
+        - label: Visualization tools
+        - label: Configuration/settings
+        - label: Documentation
+        - label: Tests
+        - label: Build/packaging
+        - label: Other (specify in additional context)
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: 🚨 Severity
+      description: How severe is this bug?
+      options:
+        - "Low - Minor inconvenience"
+        - "Medium - Affects functionality but has workaround"
+        - "High - Breaks important functionality"
+        - "Critical - Application unusable"
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 🌍 Environment Details
+      description: Additional environment information
+      placeholder: |
+        Poetry version: 1.6.0
+        PyTorch version: 2.1.0
+        CUDA available: No
+        Other relevant packages: numpy==1.24.0, pandas==2.0.0
+      render: shell
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 Additional Context
+      description: Add any other context about the problem here
+      placeholder: Any additional information that might help us understand the issue...
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 🤝 Contribution
+      description: Are you willing to help fix this issue?
+      options:
+        - label: I would like to work on fixing this bug
+        - label: I can provide additional testing
+        - label: I can help with documentation updates
