@@ -2,16 +2,16 @@
 Utility functions for PyTorch regression module.
 """
 
+
 import numpy as np
 import pandas as pd
 import torch
-from typing import Union, List, Tuple, Dict, Optional
 
 
 def to_tensor(
-    data: Union[np.ndarray, pd.DataFrame, pd.Series, torch.Tensor],
+    data: np.ndarray | pd.DataFrame | pd.Series | torch.Tensor,
     device: torch.device,
-    dtype: torch.dtype = torch.float32
+    dtype: torch.dtype = torch.float32,
 ) -> torch.Tensor:
     """
     Convert various data types to PyTorch tensor.
@@ -40,7 +40,7 @@ def to_tensor(
         return torch.tensor(data, device=device, dtype=dtype)
 
 
-def detect_categorical_columns(df: pd.DataFrame) -> List[str]:
+def detect_categorical_columns(df: pd.DataFrame) -> list[str]:
     """
     Detect categorical columns in a DataFrame.
 
@@ -57,9 +57,9 @@ def detect_categorical_columns(df: pd.DataFrame) -> List[str]:
     categorical_cols = []
 
     for col in df.columns:
-        if df[col].dtype == 'object' or df[col].dtype.name == 'category':
+        if df[col].dtype == "object" or df[col].dtype.name == "category":
             categorical_cols.append(col)
-        elif df[col].dtype in ['int64', 'int32'] and df[col].nunique() <= 10:
+        elif df[col].dtype in ["int64", "int32"] and df[col].nunique() <= 10:
             # Consider integer columns with few unique values as categorical
             categorical_cols.append(col)
 
@@ -68,9 +68,9 @@ def detect_categorical_columns(df: pd.DataFrame) -> List[str]:
 
 def create_dummy_variables(
     df: pd.DataFrame,
-    categorical_cols: List[str],
-    encoding_mappings: Optional[Dict] = None
-) -> Tuple[pd.DataFrame, List[str], Dict]:
+    categorical_cols: list[str],
+    encoding_mappings: dict | None = None,
+) -> tuple[pd.DataFrame, list[str], dict]:
     """
     Create dummy variables for categorical columns.
 
@@ -102,7 +102,9 @@ def create_dummy_variables(
                 # Use existing mappings for consistency
                 categories = mappings[col]
                 # Handle unseen categories by mapping to all zeros (reference category)
-                df_col = df_encoded[col].map(lambda x: x if x in categories else categories[0])
+                def map_categories(x, cats=categories):
+                    return x if x in cats else cats[0]
+                df_col = df_encoded[col].map(map_categories)
             else:
                 categories = sorted(df_encoded[col].unique())
                 mappings[col] = categories
@@ -119,7 +121,9 @@ def create_dummy_variables(
     return df_encoded, feature_names, mappings
 
 
-def calculate_vif(X: Union[np.ndarray, pd.DataFrame], feature_names: Optional[List[str]] = None) -> pd.DataFrame:
+def calculate_vif(
+    X: np.ndarray | pd.DataFrame, feature_names: list[str] | None = None
+) -> pd.DataFrame:
     """
     Calculate Variance Inflation Factor (VIF) for features.
 
@@ -139,7 +143,7 @@ def calculate_vif(X: Union[np.ndarray, pd.DataFrame], feature_names: Optional[Li
         feature_names = X.columns.tolist()
         X = X.values
     elif feature_names is None:
-        feature_names = [f'feature_{i}' for i in range(X.shape[1])]
+        feature_names = [f"feature_{i}" for i in range(X.shape[1])]
 
     n_features = X.shape[1]
     vif_values = []
@@ -152,12 +156,14 @@ def calculate_vif(X: Union[np.ndarray, pd.DataFrame], feature_names: Optional[Li
         # Fit linear regression (using numpy for simplicity)
         try:
             # Add intercept
-            X_others_with_intercept = np.column_stack([np.ones(X_others.shape[0]), X_others])
+            X_others_with_intercept = np.column_stack(
+                [np.ones(X_others.shape[0]), X_others]
+            )
 
             # Solve normal equations
             coef = np.linalg.solve(
                 X_others_with_intercept.T @ X_others_with_intercept,
-                X_others_with_intercept.T @ y_target
+                X_others_with_intercept.T @ y_target,
             )
 
             # Calculate R-squared
@@ -174,32 +180,29 @@ def calculate_vif(X: Union[np.ndarray, pd.DataFrame], feature_names: Optional[Li
             # Singular matrix - perfect multicollinearity
             vif_values.append(np.inf)
 
-    vif_df = pd.DataFrame({
-        'feature': feature_names,
-        'VIF': vif_values
-    })
+    vif_df = pd.DataFrame({"feature": feature_names, "VIF": vif_values})
 
     # Add warnings
-    moderate_multicollinearity = (vif_df['VIF'] > 5) & (vif_df['VIF'] <= 10)
-    high_multicollinearity = vif_df['VIF'] > 10
+    moderate_multicollinearity = (vif_df["VIF"] > 5) & (vif_df["VIF"] <= 10)
+    high_multicollinearity = vif_df["VIF"] > 10
 
     if moderate_multicollinearity.any():
         print("Warning: Moderate multicollinearity detected (VIF > 5):")
-        print(vif_df[moderate_multicollinearity][['feature', 'VIF']])
+        print(vif_df[moderate_multicollinearity][["feature", "VIF"]])
 
     if high_multicollinearity.any():
         print("Warning: High multicollinearity detected (VIF > 10):")
-        print(vif_df[high_multicollinearity][['feature', 'VIF']])
+        print(vif_df[high_multicollinearity][["feature", "VIF"]])
 
     return vif_df
 
 
 def add_polynomial_features(
-    X: Union[np.ndarray, pd.DataFrame],
+    X: np.ndarray | pd.DataFrame,
     degree: int = 2,
     interaction_only: bool = False,
-    include_bias: bool = False
-) -> Union[np.ndarray, pd.DataFrame]:
+    include_bias: bool = False,
+) -> np.ndarray | pd.DataFrame:
     """
     Generate polynomial features.
 
@@ -221,20 +224,18 @@ def add_polynomial_features(
     """
     try:
         from sklearn.preprocessing import PolynomialFeatures
+
         poly = PolynomialFeatures(
-            degree=degree,
-            interaction_only=interaction_only,
-            include_bias=include_bias
+            degree=degree, interaction_only=interaction_only, include_bias=include_bias
         )
         return poly.fit_transform(X)
-    except ImportError:
-        raise ImportError("scikit-learn is required for polynomial features")
+    except ImportError as err:
+        raise ImportError("scikit-learn is required for polynomial features") from err
 
 
 def standardize_features(
-    X: Union[np.ndarray, pd.DataFrame],
-    fit_params: Optional[Dict] = None
-) -> Tuple[Union[np.ndarray, pd.DataFrame], Dict]:
+    X: np.ndarray | pd.DataFrame, fit_params: dict | None = None
+) -> tuple[np.ndarray | pd.DataFrame, dict]:
     """
     Standardize features (z-score normalization).
 
@@ -256,10 +257,10 @@ def standardize_features(
         if fit_params is None:
             mean = X.mean()
             std = X.std()
-            params = {'mean': mean, 'std': std}
+            params = {"mean": mean, "std": std}
         else:
-            mean = fit_params['mean']
-            std = fit_params['std']
+            mean = fit_params["mean"]
+            std = fit_params["std"]
             params = fit_params
 
         X_scaled = (X - mean) / std
@@ -268,10 +269,10 @@ def standardize_features(
         if fit_params is None:
             mean = np.mean(X, axis=0)
             std = np.std(X, axis=0)
-            params = {'mean': mean, 'std': std}
+            params = {"mean": mean, "std": std}
         else:
-            mean = fit_params['mean']
-            std = fit_params['std']
+            mean = fit_params["mean"]
+            std = fit_params["std"]
             params = fit_params
 
         X_scaled = (X - mean) / std
@@ -279,8 +280,7 @@ def standardize_features(
 
 
 def check_input_consistency(
-    X_train: Union[np.ndarray, pd.DataFrame],
-    X_test: Union[np.ndarray, pd.DataFrame]
+    X_train: np.ndarray | pd.DataFrame, X_test: np.ndarray | pd.DataFrame
 ) -> None:
     """
     Check that training and test data have consistent structure.
@@ -302,16 +302,16 @@ def check_input_consistency(
             raise ValueError("Training and test DataFrames must have the same columns")
     elif isinstance(X_train, np.ndarray) and isinstance(X_test, np.ndarray):
         if X_train.shape[1] != X_test.shape[1]:
-            raise ValueError("Training and test arrays must have the same number of features")
+            raise ValueError(
+                "Training and test arrays must have the same number of features"
+            )
     else:
         raise ValueError("Training and test data must be of the same type")
 
 
 def split_features_target(
-    data: pd.DataFrame,
-    target_col: str,
-    feature_cols: Optional[List[str]] = None
-) -> Tuple[pd.DataFrame, pd.Series]:
+    data: pd.DataFrame, target_col: str, feature_cols: list[str] | None = None
+) -> tuple[pd.DataFrame, pd.Series]:
     """
     Split DataFrame into features and target.
 

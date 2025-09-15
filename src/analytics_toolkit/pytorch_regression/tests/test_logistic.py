@@ -2,16 +2,18 @@
 Tests for LogisticRegression class.
 """
 
-import pytest
+import warnings
+
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 from sklearn.datasets import make_classification
 from sklearn.linear_model import LogisticRegression as SklearnLogisticRegression
-import warnings
 
 try:
     import statsmodels.api as sm
+
     STATSMODELS_AVAILABLE = True
 except ImportError:
     STATSMODELS_AVAILABLE = False
@@ -37,8 +39,11 @@ class TestLogisticRegression:
     def classification_data(self):
         """Create larger classification dataset."""
         X, y = make_classification(
-            n_samples=1000, n_features=10, n_redundant=0,
-            n_informative=5, random_state=42
+            n_samples=1000,
+            n_features=10,
+            n_redundant=0,
+            n_informative=5,
+            random_state=42,
         )
         return X, y
 
@@ -52,21 +57,21 @@ class TestLogisticRegression:
         X_cont = np.random.randn(n_samples, 2)
 
         # Categorical features
-        categories = ['A', 'B', 'C']
+        categories = ["A", "B", "C"]
         cat_feature = np.random.choice(categories, n_samples)
 
         # Create DataFrame
-        df = pd.DataFrame({
-            'x1': X_cont[:, 0],
-            'x2': X_cont[:, 1],
-            'category': cat_feature
-        })
+        df = pd.DataFrame(
+            {"x1": X_cont[:, 0], "x2": X_cont[:, 1], "category": cat_feature}
+        )
 
         # Generate binary target
-        logits = (1.0 * df['x1'] +
-                 -0.5 * df['x2'] +
-                 1.5 * (df['category'] == 'B') +
-                 -1.0 * (df['category'] == 'C'))
+        logits = (
+            1.0 * df["x1"]
+            + -0.5 * df["x2"]
+            + 1.5 * (df["category"] == "B")
+            + -1.0 * (df["category"] == "C")
+        )
 
         probabilities = 1 / (1 + np.exp(-logits))
         y = np.random.binomial(1, probabilities)
@@ -78,28 +83,25 @@ class TestLogisticRegression:
         # Default parameters
         model = LogisticRegression()
         assert model.fit_intercept is True
-        assert model.penalty == 'none'
-        assert model.solver == 'lbfgs'
+        assert model.penalty == "none"
+        assert model.solver == "lbfgs"
 
         # Custom parameters
         model = LogisticRegression(
-            fit_intercept=False,
-            penalty='l2',
-            alpha=0.1,
-            solver='adam'
+            fit_intercept=False, penalty="l2", alpha=0.1, solver="adam"
         )
         assert model.fit_intercept is False
-        assert model.penalty == 'l2'
+        assert model.penalty == "l2"
         assert model.alpha == 0.1
-        assert model.solver == 'adam'
+        assert model.solver == "adam"
 
     def test_invalid_parameters(self):
         """Test invalid parameter handling."""
         with pytest.raises(ValueError):
-            LogisticRegression(penalty='invalid')
+            LogisticRegression(penalty="invalid")
 
         with pytest.raises(ValueError):
-            LogisticRegression(solver='invalid')
+            LogisticRegression(solver="invalid")
 
     def test_basic_fit_predict(self, binary_data):
         """Test basic fit and predict functionality."""
@@ -141,7 +143,7 @@ class TestLogisticRegression:
         """Test different optimization solvers."""
         X, y, _ = binary_data
 
-        solvers = ['lbfgs', 'adam', 'sgd']
+        solvers = ["lbfgs", "adam", "sgd"]
 
         for solver in solvers:
             model = LogisticRegression(solver=solver, max_iter=100)
@@ -158,17 +160,17 @@ class TestLogisticRegression:
         X, y = classification_data
 
         # L2 regularization
-        model_l2 = LogisticRegression(penalty='l2', alpha=0.1)
+        model_l2 = LogisticRegression(penalty="l2", alpha=0.1)
         model_l2.fit(X, y)
         assert model_l2.is_fitted_ is True
 
         # L1 regularization
-        model_l1 = LogisticRegression(penalty='l1', alpha=0.1)
+        model_l1 = LogisticRegression(penalty="l1", alpha=0.1)
         model_l1.fit(X, y)
         assert model_l1.is_fitted_ is True
 
         # Regularization should affect coefficients
-        coef_no_reg = LogisticRegression(penalty='none').fit(X, y).coef_
+        coef_no_reg = LogisticRegression(penalty="none").fit(X, y).coef_
         coef_l2 = model_l2.coef_
 
         assert not np.allclose(coef_no_reg.cpu().numpy(), coef_l2.cpu().numpy())
@@ -222,13 +224,13 @@ class TestLogisticRegression:
             conf_int = model.conf_int()
             assert isinstance(conf_int, pd.DataFrame)
             assert len(conf_int) == len(model.coef_)
-            assert 'lower' in conf_int.columns
-            assert 'upper' in conf_int.columns
+            assert "lower" in conf_int.columns
+            assert "upper" in conf_int.columns
 
         # Test summary
         summary = model.summary()
         assert isinstance(summary, str)
-        assert 'coef' in summary
+        assert "coef" in summary
 
     def test_decision_function(self, binary_data):
         """Test decision function (log-odds)."""
@@ -246,7 +248,9 @@ class TestLogisticRegression:
         expected_logits = np.log(probabilities / (1 - probabilities + 1e-15))
 
         # Should be approximately equal (within numerical precision)
-        np.testing.assert_allclose(decision_scores, expected_logits, rtol=1e-3, atol=1e-3)
+        np.testing.assert_allclose(
+            decision_scores, expected_logits, rtol=1e-3, atol=1e-3
+        )
 
     def test_model_statistics(self, binary_data):
         """Test model fit statistics."""
@@ -256,12 +260,12 @@ class TestLogisticRegression:
         model.fit(X, y)
 
         # Check log-likelihood
-        assert hasattr(model, 'log_likelihood_')
+        assert hasattr(model, "log_likelihood_")
         assert model.log_likelihood_ is not None
 
         # Check information criteria
-        assert hasattr(model, 'aic_')
-        assert hasattr(model, 'bic_')
+        assert hasattr(model, "aic_")
+        assert hasattr(model, "bic_")
         assert model.aic_ is not None
         assert model.bic_ is not None
 
@@ -282,15 +286,12 @@ class TestLogisticRegression:
         np.testing.assert_allclose(
             our_model.coef_.detach().cpu().numpy(),
             sm_model.params.values,
-            rtol=1e-2, atol=1e-2
+            rtol=1e-2,
+            atol=1e-2,
         )
 
         # Compare log-likelihood
-        np.testing.assert_allclose(
-            our_model.log_likelihood_,
-            sm_model.llf,
-            rtol=1e-2
-        )
+        np.testing.assert_allclose(our_model.log_likelihood_, sm_model.llf, rtol=1e-2)
 
     def test_comparison_with_sklearn(self, classification_data):
         """Compare predictions with scikit-learn."""
@@ -331,7 +332,7 @@ class TestLogisticRegression:
         pred_numpy = model.predict(X)
 
         # Test pandas DataFrame
-        df = pd.DataFrame(X, columns=['x1', 'x2', 'x3'])
+        df = pd.DataFrame(X, columns=["x1", "x2", "x3"])
         model_df = LogisticRegression()
         model_df.fit(df, y)
         pred_df = model_df.predict(df)
@@ -399,18 +400,18 @@ class TestLogisticRegression:
             # Should have convergence warning
             assert any("convergence" in str(warning.message).lower() for warning in w)
 
-        assert hasattr(model, 'n_iter_')
+        assert hasattr(model, "n_iter_")
         assert model.n_iter_ is not None
 
     def test_get_set_params(self):
         """Test parameter getting and setting."""
-        model = LogisticRegression(alpha=0.1, penalty='l2', solver='adam')
+        model = LogisticRegression(alpha=0.1, penalty="l2", solver="adam")
 
         # Test get_params
         params = model.get_params()
-        assert params['alpha'] == 0.1
-        assert params['penalty'] == 'l2'
-        assert params['solver'] == 'adam'
+        assert params["alpha"] == 0.1
+        assert params["penalty"] == "l2"
+        assert params["solver"] == "adam"
 
         # Test set_params
         model.set_params(alpha=0.2, max_iter=500)
@@ -423,11 +424,11 @@ class TestLogisticRegression:
 
     def test_device_handling(self):
         """Test GPU/CPU device handling."""
-        model = LogisticRegression(device='cpu')
-        assert model.device.type == 'cpu'
+        model = LogisticRegression(device="cpu")
+        assert model.device.type == "cpu"
 
         # Test auto device selection
-        model_auto = LogisticRegression(device='auto')
+        model_auto = LogisticRegression(device="auto")
         assert model_auto.device is not None
 
     def test_class_handling(self, binary_data):
@@ -435,13 +436,13 @@ class TestLogisticRegression:
         X, y, _ = binary_data
 
         # Test with string labels
-        y_str = np.where(y == 0, 'negative', 'positive')
+        y_str = np.where(y == 0, "negative", "positive")
 
         model = LogisticRegression()
         model.fit(X, y_str)
 
         predictions = model.predict(X)
-        assert set(predictions).issubset({'negative', 'positive'})
+        assert set(predictions).issubset({"negative", "positive"})
 
         # Test with different numeric labels
         y_custom = np.where(y == 0, -1, 1)
@@ -468,7 +469,7 @@ class TestLogisticRegression:
         bin_lowers = bin_boundaries[:-1]
         bin_uppers = bin_boundaries[1:]
 
-        for bin_lower, bin_upper in zip(bin_lowers, bin_uppers):
+        for bin_lower, bin_upper in zip(bin_lowers, bin_uppers, strict=False):
             # Find predictions in this bin
             in_bin = (probabilities > bin_lower) & (probabilities <= bin_upper)
 

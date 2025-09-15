@@ -7,8 +7,7 @@ comprehensive statistical inference capabilities.
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.datasets import make_regression, make_classification
+from sklearn.datasets import make_classification, make_regression
 from sklearn.model_selection import train_test_split
 
 # Import our PyTorch regression module
@@ -26,11 +25,11 @@ def linear_regression_example():
     X, y = make_regression(n_samples=500, n_features=5, noise=0.1, random_state=42)
 
     # Create feature names
-    feature_names = [f'feature_{i+1}' for i in range(X.shape[1])]
+    feature_names = [f"feature_{i+1}" for i in range(X.shape[1])]
     df = pd.DataFrame(X, columns=feature_names)
 
     # Add a categorical variable
-    df['category'] = np.random.choice(['A', 'B', 'C'], size=len(df))
+    df["category"] = np.random.choice(["A", "B", "C"], size=len(df))
 
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(
@@ -39,15 +38,14 @@ def linear_regression_example():
 
     # Fit model
     print("Fitting linear regression model...")
-    model = LinearRegression(penalty='l2', alpha=0.01)
+    model = LinearRegression(penalty="l2", alpha=0.01)
     model.fit(X_train, y_train)
 
     # Display statistical summary
     print("\nStatistical Summary:")
     print(model.summary())
 
-    # Make predictions
-    y_pred = model.predict(X_test)
+    # Make predictions and evaluate
     r2_score = model.score(X_test, y_test)
     print(f"\nTest R² Score: {r2_score:.4f}")
 
@@ -60,7 +58,9 @@ def linear_regression_example():
     print("\nPrediction intervals for first 5 test samples:")
     y_pred_interval, lower, upper = model.predict_interval(X_test[:5])
     for i in range(5):
-        print(f"Sample {i+1}: {y_pred_interval[i]:.3f} [{lower[i]:.3f}, {upper[i]:.3f}]")
+        print(
+            f"Sample {i+1}: {y_pred_interval[i]:.3f} [{lower[i]:.3f}, {upper[i]:.3f}]"
+        )
 
     return model, X_test, y_test
 
@@ -74,16 +74,15 @@ def logistic_regression_example():
     # Generate synthetic classification data
     np.random.seed(42)
     X, y = make_classification(
-        n_samples=1000, n_features=6, n_redundant=0,
-        n_informative=4, random_state=42
+        n_samples=1000, n_features=6, n_redundant=0, n_informative=4, random_state=42
     )
 
     # Create DataFrame with mixed data types
-    feature_names = [f'feature_{i+1}' for i in range(X.shape[1])]
+    feature_names = [f"feature_{i+1}" for i in range(X.shape[1])]
     df = pd.DataFrame(X, columns=feature_names)
 
     # Add categorical variable
-    df['region'] = np.random.choice(['North', 'South', 'East', 'West'], size=len(df))
+    df["region"] = np.random.choice(["North", "South", "East", "West"], size=len(df))
 
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(
@@ -92,7 +91,7 @@ def logistic_regression_example():
 
     # Fit model
     print("Fitting logistic regression model...")
-    model = LogisticRegression(penalty='l2', alpha=0.1, max_iter=1000)
+    model = LogisticRegression(penalty="l2", alpha=0.1, max_iter=1000)
     model.fit(X_train, y_train)
 
     # Display statistical summary
@@ -109,8 +108,10 @@ def logistic_regression_example():
     # Show some probability predictions
     print("\nProbability predictions for first 5 test samples:")
     for i in range(5):
-        print(f"Sample {i+1}: Class={y_pred[i]}, "
-              f"P(class=0)={y_proba[i,0]:.3f}, P(class=1)={y_proba[i,1]:.3f}")
+        print(
+            f"Sample {i+1}: Class={y_pred[i]}, "
+            f"P(class=0)={y_proba[i,0]:.3f}, P(class=1)={y_proba[i,1]:.3f}"
+        )
 
     # Decision function
     decision_scores = model.decision_function(X_test[:5])
@@ -127,9 +128,10 @@ def performance_comparison():
     print("PERFORMANCE COMPARISON WITH SCIKIT-LEARN")
     print("=" * 60)
 
+    import time
+
     from sklearn.linear_model import LinearRegression as SklearnLinear
     from sklearn.linear_model import LogisticRegression as SklearnLogistic
-    import time
 
     # Generate larger dataset for timing
     X, y = make_regression(n_samples=10000, n_features=20, random_state=42)
@@ -207,7 +209,7 @@ def statistical_features_demo():
     from analytics_toolkit.pytorch_regression.utils import calculate_vif
 
     print("Variance Inflation Factors:")
-    vif_results = calculate_vif(X, ['X1', 'X2', 'X3'])
+    vif_results = calculate_vif(X, ["X1", "X2", "X3"])
     print(vif_results)
 
     # Fit model and examine residuals
@@ -218,8 +220,8 @@ def statistical_features_demo():
     print(f"Adjusted R²: {model.adj_r_squared_:.4f}")
 
     # Residual analysis
-    residuals = model.get_residuals(X, y, residual_type='standardized')
-    print(f"\nStandardized Residuals Summary:")
+    residuals = model.get_residuals(X, y, residual_type="standardized")
+    print("\nStandardized Residuals Summary:")
     print(f"Mean: {np.mean(residuals):.6f}")
     print(f"Std:  {np.std(residuals):.6f}")
     print(f"Min:  {np.min(residuals):.3f}")
@@ -242,9 +244,9 @@ def regularization_demo():
     X, y = make_regression(n_samples=100, n_features=50, noise=0.1, random_state=42)
 
     models = {
-        'No Regularization': LinearRegression(penalty='none'),
-        'L1 (Lasso)': LinearRegression(penalty='l1', alpha=0.1),
-        'L2 (Ridge)': LinearRegression(penalty='l2', alpha=0.1),
+        "No Regularization": LinearRegression(penalty="none"),
+        "L1 (Lasso)": LinearRegression(penalty="l1", alpha=0.1),
+        "L2 (Ridge)": LinearRegression(penalty="l2", alpha=0.1),
     }
 
     results = {}
@@ -256,16 +258,18 @@ def regularization_demo():
         coef_norm = np.linalg.norm(model.coef_.cpu().numpy())
 
         results[name] = {
-            'R²': r2,
-            'Non-zero coeffs': n_nonzero,
-            'Coeff norm': coef_norm
+            "R²": r2,
+            "Non-zero coeffs": n_nonzero,
+            "Coeff norm": coef_norm,
         }
 
     print("\nRegularization Effects:")
     print(f"{'Method':<20} {'R²':<8} {'Non-zero':<10} {'||β||':<10}")
     print("-" * 50)
     for name, stats in results.items():
-        print(f"{name:<20} {stats['R²']:<8.4f} {stats['Non-zero']:<10} {stats['Coeff norm']:<10.3f}")
+        print(
+            f"{name:<20} {stats['R²']:<8.4f} {stats['Non-zero']:<10} {stats['Coeff norm']:<10.3f}"
+        )
 
 
 def main():
@@ -296,6 +300,7 @@ def main():
     except Exception as e:
         print(f"\nError during demo: {str(e)}")
         import traceback
+
         traceback.print_exc()
 
 

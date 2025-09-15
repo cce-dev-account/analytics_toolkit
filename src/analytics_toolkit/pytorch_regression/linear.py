@@ -3,12 +3,13 @@ Linear regression implementation with statistical inference.
 """
 
 import warnings
+
 import numpy as np
 import torch
 import torch.nn.functional as F
-from typing import Union, Optional, Tuple
+
 from .base import BaseRegression
-from .stats import compute_standard_errors, compute_model_statistics
+from .stats import compute_model_statistics, compute_standard_errors
 
 
 class LinearRegression(BaseRegression):
@@ -40,13 +41,13 @@ class LinearRegression(BaseRegression):
     def __init__(
         self,
         fit_intercept: bool = True,
-        penalty: str = 'none',
+        penalty: str = "none",
         alpha: float = 0.01,
         max_iter: int = 1000,
         tol: float = 1e-4,
-        device: str = 'auto',
-        solver: str = 'auto',
-        **kwargs
+        device: str = "auto",
+        solver: str = "auto",
+        **kwargs,
     ):
         super().__init__(
             fit_intercept=fit_intercept,
@@ -55,7 +56,7 @@ class LinearRegression(BaseRegression):
             max_iter=max_iter,
             tol=tol,
             device=device,
-            **kwargs
+            **kwargs,
         )
 
         self.solver = solver
@@ -67,7 +68,7 @@ class LinearRegression(BaseRegression):
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """
         Compute the mean squared error loss with optional regularization.
@@ -94,11 +95,13 @@ class LinearRegression(BaseRegression):
             mse_loss = F.mse_loss(predictions, y)
         else:
             squared_errors = (predictions - y) ** 2
-            weighted_loss = torch.sum(sample_weight * squared_errors) / torch.sum(sample_weight)
+            weighted_loss = torch.sum(sample_weight * squared_errors) / torch.sum(
+                sample_weight
+            )
             mse_loss = weighted_loss
 
         # Add regularization penalty (exclude intercept)
-        if self.penalty != 'none':
+        if self.penalty != "none":
             coef_to_regularize = self.coef_[1:] if self.fit_intercept else self.coef_
             regularization = self._get_regularization_penalty(coef_to_regularize)
             return mse_loss + regularization
@@ -109,7 +112,7 @@ class LinearRegression(BaseRegression):
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> None:
         """
         Fit the linear regression model.
@@ -133,33 +136,35 @@ class LinearRegression(BaseRegression):
         # Choose solver
         solver = self._choose_solver(X_with_intercept, sample_weight)
 
-        if solver in ['normal_equation', 'qr'] and self.penalty == 'none':
+        if solver in ["normal_equation", "qr"] and self.penalty == "none":
             self._fit_analytical(X_with_intercept, y, sample_weight, solver)
         else:
             self._fit_iterative(X_with_intercept, y, sample_weight)
 
-    def _choose_solver(self, X: torch.Tensor, sample_weight: Optional[torch.Tensor]) -> str:
+    def _choose_solver(
+        self, X: torch.Tensor, sample_weight: torch.Tensor | None
+    ) -> str:
         """Choose the appropriate solver based on problem characteristics."""
-        if self.solver != 'auto':
+        if self.solver != "auto":
             return self.solver
 
         n_samples, n_features = X.shape
 
         # Use analytical solution for unregularized problems
-        if self.penalty == 'none' and sample_weight is None:
+        if self.penalty == "none" and sample_weight is None:
             if n_features < 10000:  # QR is more stable
-                return 'qr'
+                return "qr"
             else:
-                return 'normal_equation'
+                return "normal_equation"
         else:
-            return 'gradient_descent'
+            return "gradient_descent"
 
     def _fit_analytical(
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor],
-        solver: str
+        sample_weight: torch.Tensor | None,
+        solver: str,
     ) -> None:
         """
         Fit using analytical solution (normal equations or QR decomposition).
@@ -176,7 +181,7 @@ class LinearRegression(BaseRegression):
             Solver type ('normal_equation' or 'qr').
         """
         try:
-            if solver == 'qr':
+            if solver == "qr":
                 # QR decomposition (more numerically stable)
                 if sample_weight is not None:
                     # Apply weights
@@ -192,11 +197,13 @@ class LinearRegression(BaseRegression):
                 y_double = y_weighted.double()
 
                 Q, R = torch.qr(X_double)
-                self.coef_ = torch.triangular_solve(
-                    torch.matmul(Q.t(), y_double).unsqueeze(1),
-                    R,
-                    upper=True
-                ).solution.squeeze().float()
+                self.coef_ = (
+                    torch.triangular_solve(
+                        torch.matmul(Q.t(), y_double).unsqueeze(1), R, upper=True
+                    )
+                    .solution.squeeze()
+                    .float()
+                )
 
             else:  # normal_equation
                 if sample_weight is not None:
@@ -217,15 +224,12 @@ class LinearRegression(BaseRegression):
         except RuntimeError as e:
             warnings.warn(
                 f"Analytical solver failed ({str(e)}). Falling back to gradient descent.",
-                RuntimeWarning
+                RuntimeWarning,
             )
             self._fit_iterative(X, y, sample_weight)
 
     def _fit_iterative(
-        self,
-        X: torch.Tensor,
-        y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor]
+        self, X: torch.Tensor, y: torch.Tensor, sample_weight: torch.Tensor | None
     ) -> None:
         """
         Fit using iterative optimization (gradient descent).
@@ -241,11 +245,15 @@ class LinearRegression(BaseRegression):
         """
         # Initialize coefficients
         n_features = X.shape[1]
-        self.coef_ = torch.randn(n_features, device=self.device, dtype=torch.float32) * 0.01
+        self.coef_ = (
+            torch.randn(n_features, device=self.device, dtype=torch.float32) * 0.01
+        )
 
         # Set up optimizer
         self.coef_.requires_grad_(True)
-        optimizer = torch.optim.LBFGS([self.coef_], max_iter=self.max_iter, tolerance_grad=self.tol)
+        optimizer = torch.optim.LBFGS(
+            [self.coef_], max_iter=self.max_iter, tolerance_grad=self.tol
+        )
 
         def closure():
             optimizer.zero_grad()
@@ -254,7 +262,7 @@ class LinearRegression(BaseRegression):
             return loss
 
         # Optimize
-        prev_loss = float('inf')
+        prev_loss = float("inf")
         for i in range(self.max_iter):
             optimizer.step(closure)
 
@@ -277,7 +285,7 @@ class LinearRegression(BaseRegression):
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> None:
         """
         Compute statistical measures for the fitted model.
@@ -300,9 +308,9 @@ class LinearRegression(BaseRegression):
 
         # Compute residual standard error
         if sample_weight is None:
-            mse = torch.mean(residuals ** 2)
+            mse = torch.mean(residuals**2)
         else:
-            weighted_sq_residuals = sample_weight * (residuals ** 2)
+            weighted_sq_residuals = sample_weight * (residuals**2)
             mse = torch.sum(weighted_sq_residuals) / torch.sum(sample_weight)
 
         self.residual_std_ = torch.sqrt(mse)
@@ -318,29 +326,35 @@ class LinearRegression(BaseRegression):
         y_pred_np = y_pred.detach().cpu().numpy()
 
         # R-squared
-        ss_res = torch.sum(residuals ** 2).item()
+        ss_res = torch.sum(residuals**2).item()
         ss_tot = torch.sum((y - torch.mean(y)) ** 2).item()
         self.r_squared_ = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
 
         # Adjusted R-squared
         n_obs = len(y)
         n_params = len(self.coef_)
-        self.adj_r_squared_ = 1 - (1 - self.r_squared_) * (n_obs - 1) / (n_obs - n_params)
+        self.adj_r_squared_ = 1 - (1 - self.r_squared_) * (n_obs - 1) / (
+            n_obs - n_params
+        )
 
         # Log-likelihood (assuming normal errors)
-        log_likelihood = -0.5 * n_obs * (np.log(2 * np.pi) + 2 * np.log(self.residual_std_.item())) - 0.5 * ss_res / (self.residual_std_.item() ** 2)
+        log_likelihood = -0.5 * n_obs * (
+            np.log(2 * np.pi) + 2 * np.log(self.residual_std_.item())
+        ) - 0.5 * ss_res / (self.residual_std_.item() ** 2)
         self.log_likelihood_ = log_likelihood
 
         # Information criteria
-        model_stats = compute_model_statistics(y, y_pred, log_likelihood, n_params, 'linear')
-        self.aic_ = model_stats['aic']
-        self.bic_ = model_stats['bic']
+        model_stats = compute_model_statistics(
+            y, y_pred, log_likelihood, n_params, "linear"
+        )
+        self.aic_ = model_stats["aic"]
+        self.bic_ = model_stats["bic"]
 
     def _compute_covariance_matrix(
         self,
         X: torch.Tensor,
         mse: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> None:
         """
         Compute parameter covariance matrix.
@@ -365,8 +379,12 @@ class LinearRegression(BaseRegression):
             XtX_double = XtX.double()
 
             # Add small regularization for numerical stability
-            if self.penalty == 'none':
-                reg_term = 1e-8 * torch.eye(XtX_double.shape[0], device=XtX_double.device, dtype=XtX_double.dtype)
+            if self.penalty == "none":
+                reg_term = 1e-8 * torch.eye(
+                    XtX_double.shape[0],
+                    device=XtX_double.device,
+                    dtype=XtX_double.dtype,
+                )
                 XtX_double += reg_term
 
             # Compute covariance matrix: (X'X)^(-1) * σ²
@@ -376,7 +394,7 @@ class LinearRegression(BaseRegression):
         except RuntimeError:
             warnings.warn(
                 "Could not compute covariance matrix. Standard errors will not be available.",
-                RuntimeWarning
+                RuntimeWarning,
             )
             self.covariance_matrix_ = None
 
@@ -391,10 +409,8 @@ class LinearRegression(BaseRegression):
         return max(1, self.n_obs_ - len(self.coef_))
 
     def predict_interval(
-        self,
-        X: Union[np.ndarray, torch.Tensor],
-        alpha: float = 0.05
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        self, X: np.ndarray | torch.Tensor, alpha: float = 0.05
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Compute prediction intervals for new observations.
 
@@ -415,7 +431,9 @@ class LinearRegression(BaseRegression):
             Upper bounds of prediction intervals.
         """
         if not self.is_fitted_:
-            raise ValueError("Model must be fitted before computing prediction intervals")
+            raise ValueError(
+                "Model must be fitted before computing prediction intervals"
+            )
 
         if self.covariance_matrix_ is None:
             raise ValueError("Covariance matrix not available")
@@ -436,8 +454,11 @@ class LinearRegression(BaseRegression):
 
             pred_variances = []
             for i in range(X_with_intercept.shape[0]):
-                x_new = X_with_intercept[i:i+1].double()  # Shape: (1, n_features)
-                leverage = torch.matmul(torch.matmul(x_new, cov_matrix), x_new.t()) / residual_var
+                x_new = X_with_intercept[i : i + 1].double()  # Shape: (1, n_features)
+                leverage = (
+                    torch.matmul(torch.matmul(x_new, cov_matrix), x_new.t())
+                    / residual_var
+                )
                 pred_var = residual_var * (1 + leverage.item())
                 pred_variances.append(pred_var)
 
@@ -445,6 +466,7 @@ class LinearRegression(BaseRegression):
 
         # Compute critical value (t-distribution)
         from scipy import stats
+
         dof = self._get_dof()
         t_critical = stats.t.ppf(1 - alpha / 2, df=dof)
 
@@ -455,7 +477,7 @@ class LinearRegression(BaseRegression):
 
         return predictions, lower, upper
 
-    def get_residuals(self, X, y, residual_type='raw'):
+    def get_residuals(self, X, y, residual_type="raw"):
         """
         Compute model residuals.
 
@@ -479,7 +501,7 @@ class LinearRegression(BaseRegression):
         y_pred = self.predict(X)
         residuals = y - y_pred
 
-        if residual_type == 'standardized':
+        if residual_type == "standardized":
             residuals = residuals / self.residual_std_.item()
 
         return residuals

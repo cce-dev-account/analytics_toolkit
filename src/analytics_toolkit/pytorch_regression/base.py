@@ -3,14 +3,19 @@ Base regression class providing common functionality for all regression models.
 """
 
 import warnings
+from abc import ABC, abstractmethod
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from abc import ABC, abstractmethod
-from typing import Union, Optional, Tuple, Dict, Any
-from .utils import detect_categorical_columns, create_dummy_variables, to_tensor
-from .stats import compute_standard_errors, compute_confidence_intervals, format_summary_table
+
+from .stats import (
+    compute_confidence_intervals,
+    format_summary_table,
+)
+from .utils import create_dummy_variables, detect_categorical_columns, to_tensor
 
 
 class BaseRegression(ABC, nn.Module):
@@ -24,12 +29,12 @@ class BaseRegression(ABC, nn.Module):
     def __init__(
         self,
         fit_intercept: bool = True,
-        penalty: str = 'none',
+        penalty: str = "none",
         alpha: float = 0.01,
         max_iter: int = 1000,
         tol: float = 1e-4,
-        device: str = 'auto',
-        categorical_encoding: str = 'dummy'
+        device: str = "auto",
+        categorical_encoding: str = "dummy",
     ):
         """
         Initialize base regression model.
@@ -61,8 +66,8 @@ class BaseRegression(ABC, nn.Module):
         self.categorical_encoding = categorical_encoding
 
         # Set device
-        if device == 'auto':
-            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if device == "auto":
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
             self.device = torch.device(device)
 
@@ -80,19 +85,19 @@ class BaseRegression(ABC, nn.Module):
         self.encoding_mappings_ = {}
 
         # Validation
-        valid_penalties = ['none', 'l1', 'l2', 'elastic_net']
+        valid_penalties = ["none", "l1", "l2", "elastic_net"]
         if self.penalty not in valid_penalties:
             raise ValueError(f"penalty must be one of {valid_penalties}")
 
-        valid_encodings = ['dummy', 'target']
+        valid_encodings = ["dummy", "target"]
         if self.categorical_encoding not in valid_encodings:
             raise ValueError(f"categorical_encoding must be one of {valid_encodings}")
 
     def _validate_input(
         self,
-        X: Union[np.ndarray, pd.DataFrame, torch.Tensor],
-        y: Optional[Union[np.ndarray, pd.Series, torch.Tensor]] = None
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[list]]:
+        X: np.ndarray | pd.DataFrame | torch.Tensor,
+        y: np.ndarray | pd.Series | torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor | None, list | None]:
         """
         Validate and preprocess input data.
 
@@ -120,8 +125,10 @@ class BaseRegression(ABC, nn.Module):
             # Handle categorical variables
             categorical_cols = detect_categorical_columns(X)
             if categorical_cols:
-                if self.categorical_encoding == 'dummy':
-                    X, feature_names, mappings = create_dummy_variables(X, categorical_cols)
+                if self.categorical_encoding == "dummy":
+                    X, feature_names, mappings = create_dummy_variables(
+                        X, categorical_cols
+                    )
                     if not self.is_fitted_:
                         self.encoding_mappings_.update(mappings)
                 else:
@@ -129,7 +136,11 @@ class BaseRegression(ABC, nn.Module):
 
         # Convert to tensors
         X_tensor = to_tensor(X, device=self.device, dtype=torch.float32)
-        y_tensor = to_tensor(y, device=self.device, dtype=torch.float32) if y is not None else None
+        y_tensor = (
+            to_tensor(y, device=self.device, dtype=torch.float32)
+            if y is not None
+            else None
+        )
 
         # Validate shapes
         if X_tensor.dim() != 2:
@@ -170,17 +181,17 @@ class BaseRegression(ABC, nn.Module):
         penalty : torch.Tensor
             Regularization penalty value.
         """
-        if self.penalty == 'none':
+        if self.penalty == "none":
             return torch.tensor(0.0, device=self.device)
-        elif self.penalty == 'l1':
+        elif self.penalty == "l1":
             return self.alpha * torch.sum(torch.abs(coef))
-        elif self.penalty == 'l2':
-            return self.alpha * torch.sum(coef ** 2)
-        elif self.penalty == 'elastic_net':
+        elif self.penalty == "l2":
+            return self.alpha * torch.sum(coef**2)
+        elif self.penalty == "elastic_net":
             # Default l1_ratio=0.5 for now (will be added as parameter later)
             l1_ratio = 0.5
             l1_penalty = l1_ratio * torch.sum(torch.abs(coef))
-            l2_penalty = (1 - l1_ratio) * torch.sum(coef ** 2)
+            l2_penalty = (1 - l1_ratio) * torch.sum(coef**2)
             return self.alpha * (l1_penalty + l2_penalty)
         else:
             raise ValueError(f"Unknown penalty: {self.penalty}")
@@ -201,7 +212,7 @@ class BaseRegression(ABC, nn.Module):
                 warnings.warn(
                     f"Design matrix is poorly conditioned (condition number: {condition_number:.2e}). "
                     "Consider regularization or removing collinear features.",
-                    RuntimeWarning
+                    RuntimeWarning,
                 )
         except Exception:
             # Silently continue if SVD fails
@@ -212,7 +223,7 @@ class BaseRegression(ABC, nn.Module):
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Compute the loss function (to be implemented by subclasses)."""
         pass
@@ -222,17 +233,17 @@ class BaseRegression(ABC, nn.Module):
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> None:
         """Fit the model (to be implemented by subclasses)."""
         pass
 
     def fit(
         self,
-        X: Union[np.ndarray, pd.DataFrame, torch.Tensor],
-        y: Union[np.ndarray, pd.Series, torch.Tensor],
-        sample_weight: Optional[Union[np.ndarray, torch.Tensor]] = None
-    ) -> 'BaseRegression':
+        X: np.ndarray | pd.DataFrame | torch.Tensor,
+        y: np.ndarray | pd.Series | torch.Tensor,
+        sample_weight: np.ndarray | torch.Tensor | None = None,
+    ) -> "BaseRegression":
         """
         Fit the regression model.
 
@@ -259,7 +270,9 @@ class BaseRegression(ABC, nn.Module):
 
         # Handle sample weights
         if sample_weight is not None:
-            sample_weight = to_tensor(sample_weight, device=self.device, dtype=torch.float32)
+            sample_weight = to_tensor(
+                sample_weight, device=self.device, dtype=torch.float32
+            )
             if sample_weight.shape[0] != X_tensor.shape[0]:
                 raise ValueError("sample_weight must have the same length as X")
 
@@ -276,7 +289,7 @@ class BaseRegression(ABC, nn.Module):
         self.is_fitted_ = True
         return self
 
-    def predict(self, X: Union[np.ndarray, pd.DataFrame, torch.Tensor]) -> np.ndarray:
+    def predict(self, X: np.ndarray | pd.DataFrame | torch.Tensor) -> np.ndarray:
         """
         Make predictions on new data.
 
@@ -299,7 +312,9 @@ class BaseRegression(ABC, nn.Module):
         if isinstance(X, pd.DataFrame) and self.encoding_mappings_:
             categorical_cols = list(self.encoding_mappings_.keys())
             if categorical_cols:
-                X_encoded, _, _ = create_dummy_variables(X, categorical_cols, self.encoding_mappings_)
+                X_encoded, _, _ = create_dummy_variables(
+                    X, categorical_cols, self.encoding_mappings_
+                )
                 X_tensor = to_tensor(X_encoded, device=self.device, dtype=torch.float32)
 
         X_with_intercept = self._add_intercept(X_tensor)
@@ -319,7 +334,7 @@ class BaseRegression(ABC, nn.Module):
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> None:
         """Compute statistical measures (to be implemented by subclasses)."""
         pass
@@ -339,7 +354,9 @@ class BaseRegression(ABC, nn.Module):
             Confidence intervals with columns [lower, upper].
         """
         if not self.is_fitted_:
-            raise ValueError("Model must be fitted before computing confidence intervals")
+            raise ValueError(
+                "Model must be fitted before computing confidence intervals"
+            )
 
         if self.standard_errors_ is None:
             raise ValueError("Standard errors not available")
@@ -349,10 +366,7 @@ class BaseRegression(ABC, nn.Module):
         )
 
         feature_names = self._get_feature_names()
-        return pd.DataFrame({
-            'lower': lower,
-            'upper': upper
-        }, index=feature_names)
+        return pd.DataFrame({"lower": lower, "upper": upper}, index=feature_names)
 
     def summary(self) -> str:
         """
@@ -371,13 +385,13 @@ class BaseRegression(ABC, nn.Module):
             std_err=self.standard_errors_,
             feature_names=self._get_feature_names(),
             model_stats={
-                'log_likelihood': self.log_likelihood_,
-                'aic': self.aic_,
-                'bic': self.bic_,
-                'n_obs': self._get_n_obs(),
-                'n_params': len(self.coef_)
+                "log_likelihood": self.log_likelihood_,
+                "aic": self.aic_,
+                "bic": self.bic_,
+                "n_obs": self._get_n_obs(),
+                "n_params": len(self.coef_),
             },
-            dof=self._get_dof()
+            dof=self._get_dof(),
         )
 
     def _get_feature_names(self) -> list:
@@ -385,16 +399,16 @@ class BaseRegression(ABC, nn.Module):
         if self.feature_names_ is not None:
             names = self.feature_names_.copy()
         else:
-            names = [f'x{i}' for i in range(self.n_features_in_)]
+            names = [f"x{i}" for i in range(self.n_features_in_)]
 
         if self.fit_intercept:
-            names = ['const'] + names
+            names = ["const"] + names
 
         return names
 
     def _get_n_obs(self) -> int:
         """Get number of observations (to be overridden if needed)."""
-        return getattr(self, 'n_obs_', 0)
+        return getattr(self, "n_obs_", 0)
 
     def _get_dof(self) -> int:
         """Get degrees of freedom (to be overridden by subclasses)."""
@@ -402,8 +416,8 @@ class BaseRegression(ABC, nn.Module):
 
     def score(
         self,
-        X: Union[np.ndarray, pd.DataFrame, torch.Tensor],
-        y: Union[np.ndarray, pd.Series, torch.Tensor]
+        X: np.ndarray | pd.DataFrame | torch.Tensor,
+        y: np.ndarray | pd.Series | torch.Tensor,
     ) -> float:
         """
         Compute the coefficient of determination R^2 (for linear) or accuracy (for logistic).
@@ -431,19 +445,19 @@ class BaseRegression(ABC, nn.Module):
         """Compute model score (to be implemented by subclasses)."""
         pass
 
-    def get_params(self, deep: bool = True) -> Dict[str, Any]:
+    def get_params(self, deep: bool = True) -> dict[str, Any]:
         """Get parameters for this estimator."""
         return {
-            'fit_intercept': self.fit_intercept,
-            'penalty': self.penalty,
-            'alpha': self.alpha,
-            'max_iter': self.max_iter,
-            'tol': self.tol,
-            'device': str(self.device),
-            'categorical_encoding': self.categorical_encoding
+            "fit_intercept": self.fit_intercept,
+            "penalty": self.penalty,
+            "alpha": self.alpha,
+            "max_iter": self.max_iter,
+            "tol": self.tol,
+            "device": str(self.device),
+            "categorical_encoding": self.categorical_encoding,
         }
 
-    def set_params(self, **params) -> 'BaseRegression':
+    def set_params(self, **params) -> "BaseRegression":
         """Set parameters for this estimator."""
         for key, value in params.items():
             if hasattr(self, key):

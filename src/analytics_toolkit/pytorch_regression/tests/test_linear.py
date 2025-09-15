@@ -2,16 +2,18 @@
 Tests for LinearRegression class.
 """
 
-import pytest
+import warnings
+
 import numpy as np
 import pandas as pd
+import pytest
 import torch
 from sklearn.datasets import make_regression
 from sklearn.linear_model import LinearRegression as SklearnLinearRegression
-import warnings
 
 try:
     import statsmodels.api as sm
+
     STATSMODELS_AVAILABLE = True
 except ImportError:
     STATSMODELS_AVAILABLE = False
@@ -49,22 +51,22 @@ class TestLinearRegression:
         X_cont = np.random.randn(n_samples, 2)
 
         # Categorical features
-        categories = ['A', 'B', 'C']
+        categories = ["A", "B", "C"]
         cat_feature = np.random.choice(categories, n_samples)
 
         # Create DataFrame
-        df = pd.DataFrame({
-            'x1': X_cont[:, 0],
-            'x2': X_cont[:, 1],
-            'category': cat_feature
-        })
+        df = pd.DataFrame(
+            {"x1": X_cont[:, 0], "x2": X_cont[:, 1], "category": cat_feature}
+        )
 
         # True coefficients (including dummy variables)
-        y = (1.0 * df['x1'] +
-             -0.5 * df['x2'] +
-             2.0 * (df['category'] == 'B') +
-             -1.0 * (df['category'] == 'C') +
-             0.1 * np.random.randn(n_samples))
+        y = (
+            1.0 * df["x1"]
+            + -0.5 * df["x2"]
+            + 2.0 * (df["category"] == "B")
+            + -1.0 * (df["category"] == "C")
+            + 0.1 * np.random.randn(n_samples)
+        )
 
         return df, y
 
@@ -73,25 +75,22 @@ class TestLinearRegression:
         # Default parameters
         model = LinearRegression()
         assert model.fit_intercept is True
-        assert model.penalty == 'none'
+        assert model.penalty == "none"
         assert model.alpha == 0.01
 
         # Custom parameters
         model = LinearRegression(
-            fit_intercept=False,
-            penalty='l2',
-            alpha=0.1,
-            max_iter=500
+            fit_intercept=False, penalty="l2", alpha=0.1, max_iter=500
         )
         assert model.fit_intercept is False
-        assert model.penalty == 'l2'
+        assert model.penalty == "l2"
         assert model.alpha == 0.1
         assert model.max_iter == 500
 
     def test_invalid_parameters(self):
         """Test invalid parameter handling."""
         with pytest.raises(ValueError):
-            LinearRegression(penalty='invalid')
+            LinearRegression(penalty="invalid")
 
     def test_basic_fit_predict(self, simple_data):
         """Test basic fit and predict functionality."""
@@ -143,17 +142,17 @@ class TestLinearRegression:
         X, y = regression_data
 
         # L2 regularization
-        model_l2 = LinearRegression(penalty='l2', alpha=0.1)
+        model_l2 = LinearRegression(penalty="l2", alpha=0.1)
         model_l2.fit(X, y)
         assert model_l2.is_fitted_ is True
 
         # L1 regularization
-        model_l1 = LinearRegression(penalty='l1', alpha=0.1)
+        model_l1 = LinearRegression(penalty="l1", alpha=0.1)
         model_l1.fit(X, y)
         assert model_l1.is_fitted_ is True
 
         # L2 coefficients should be smaller in magnitude
-        coef_no_reg = LinearRegression(penalty='none').fit(X, y).coef_
+        coef_no_reg = LinearRegression(penalty="none").fit(X, y).coef_
         coef_l2 = model_l2.coef_
 
         # Check that regularization affects coefficients
@@ -191,15 +190,15 @@ class TestLinearRegression:
         conf_int = model.conf_int()
         assert isinstance(conf_int, pd.DataFrame)
         assert len(conf_int) == len(model.coef_)
-        assert 'lower' in conf_int.columns
-        assert 'upper' in conf_int.columns
+        assert "lower" in conf_int.columns
+        assert "upper" in conf_int.columns
 
         # Test summary
         summary = model.summary()
         assert isinstance(summary, str)
-        assert 'coef' in summary
-        assert 'std err' in summary
-        assert 'R-squared' in summary
+        assert "coef" in summary
+        assert "std err" in summary
+        assert "R-squared" in summary
 
     def test_prediction_intervals(self, simple_data):
         """Test prediction interval computation."""
@@ -230,15 +229,15 @@ class TestLinearRegression:
         model.fit(X, y)
 
         # Check R²
-        assert hasattr(model, 'r_squared_')
+        assert hasattr(model, "r_squared_")
         assert 0 <= model.r_squared_ <= 1
 
         # Check adjusted R²
-        assert hasattr(model, 'adj_r_squared_')
+        assert hasattr(model, "adj_r_squared_")
 
         # Check information criteria
-        assert hasattr(model, 'aic_')
-        assert hasattr(model, 'bic_')
+        assert hasattr(model, "aic_")
+        assert hasattr(model, "bic_")
         assert model.aic_ is not None
         assert model.bic_ is not None
 
@@ -257,9 +256,7 @@ class TestLinearRegression:
 
         # Compare coefficients (should be close)
         np.testing.assert_allclose(
-            our_model.coef_.detach().cpu().numpy(),
-            sm_model.params.values,
-            rtol=1e-3
+            our_model.coef_.detach().cpu().numpy(), sm_model.params.values, rtol=1e-3
         )
 
         # Compare standard errors
@@ -267,7 +264,7 @@ class TestLinearRegression:
             np.testing.assert_allclose(
                 our_model.standard_errors_.detach().cpu().numpy(),
                 sm_model.bse.values,
-                rtol=1e-2
+                rtol=1e-2,
             )
 
         # Compare R²
@@ -308,7 +305,7 @@ class TestLinearRegression:
         pred_numpy = model.predict(X)
 
         # Test pandas DataFrame
-        df = pd.DataFrame(X, columns=['x1', 'x2', 'x3'])
+        df = pd.DataFrame(X, columns=["x1", "x2", "x3"])
         model_df = LinearRegression()
         model_df.fit(df, y)
         pred_df = model_df.predict(df)
@@ -351,11 +348,11 @@ class TestLinearRegression:
         model.fit(X, y)
 
         # Test raw residuals
-        residuals = model.get_residuals(X, y, residual_type='raw')
+        residuals = model.get_residuals(X, y, residual_type="raw")
         assert len(residuals) == len(y)
 
         # Test standardized residuals
-        std_residuals = model.get_residuals(X, y, residual_type='standardized')
+        std_residuals = model.get_residuals(X, y, residual_type="standardized")
         assert len(std_residuals) == len(y)
 
         # Standardized residuals should have approximately unit variance
@@ -363,12 +360,12 @@ class TestLinearRegression:
 
     def test_get_set_params(self):
         """Test parameter getting and setting."""
-        model = LinearRegression(alpha=0.1, penalty='l2')
+        model = LinearRegression(alpha=0.1, penalty="l2")
 
         # Test get_params
         params = model.get_params()
-        assert params['alpha'] == 0.1
-        assert params['penalty'] == 'l2'
+        assert params["alpha"] == 0.1
+        assert params["penalty"] == "l2"
 
         # Test set_params
         model.set_params(alpha=0.2, max_iter=500)
@@ -381,11 +378,11 @@ class TestLinearRegression:
 
     def test_device_handling(self):
         """Test GPU/CPU device handling."""
-        model = LinearRegression(device='cpu')
-        assert model.device.type == 'cpu'
+        model = LinearRegression(device="cpu")
+        assert model.device.type == "cpu"
 
         # Test auto device selection
-        model_auto = LinearRegression(device='auto')
+        model_auto = LinearRegression(device="auto")
         assert model_auto.device is not None
 
     def test_memory_efficiency(self):

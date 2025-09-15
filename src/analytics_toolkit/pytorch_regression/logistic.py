@@ -3,12 +3,13 @@ Logistic regression implementation with statistical inference.
 """
 
 import warnings
+
 import numpy as np
 import torch
 import torch.nn.functional as F
-from typing import Union, Optional, Tuple
+
 from .base import BaseRegression
-from .stats import compute_standard_errors, compute_model_statistics
+from .stats import compute_model_statistics, compute_standard_errors
 
 
 class LogisticRegression(BaseRegression):
@@ -40,13 +41,13 @@ class LogisticRegression(BaseRegression):
     def __init__(
         self,
         fit_intercept: bool = True,
-        penalty: str = 'none',
+        penalty: str = "none",
         alpha: float = 0.01,
         max_iter: int = 1000,
         tol: float = 1e-4,
-        device: str = 'auto',
-        solver: str = 'lbfgs',
-        **kwargs
+        device: str = "auto",
+        solver: str = "lbfgs",
+        **kwargs,
     ):
         super().__init__(
             fit_intercept=fit_intercept,
@@ -55,7 +56,7 @@ class LogisticRegression(BaseRegression):
             max_iter=max_iter,
             tol=tol,
             device=device,
-            **kwargs
+            **kwargs,
         )
 
         self.solver = solver
@@ -63,7 +64,7 @@ class LogisticRegression(BaseRegression):
         self.n_iter_ = None
 
         # Validate solver
-        valid_solvers = ['lbfgs', 'adam', 'sgd']
+        valid_solvers = ["lbfgs", "adam", "sgd"]
         if self.solver not in valid_solvers:
             raise ValueError(f"solver must be one of {valid_solvers}")
 
@@ -100,7 +101,7 @@ class LogisticRegression(BaseRegression):
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """
         Compute the logistic loss with optional regularization.
@@ -124,12 +125,14 @@ class LogisticRegression(BaseRegression):
 
         # Compute binary cross-entropy loss
         if sample_weight is None:
-            bce_loss = F.binary_cross_entropy_with_logits(logits, y, reduction='mean')
+            bce_loss = F.binary_cross_entropy_with_logits(logits, y, reduction="mean")
         else:
-            bce_loss = F.binary_cross_entropy_with_logits(logits, y, weight=sample_weight, reduction='mean')
+            bce_loss = F.binary_cross_entropy_with_logits(
+                logits, y, weight=sample_weight, reduction="mean"
+            )
 
         # Add regularization penalty (exclude intercept)
-        if self.penalty != 'none':
+        if self.penalty != "none":
             coef_to_regularize = self.coef_[1:] if self.fit_intercept else self.coef_
             regularization = self._get_regularization_penalty(coef_to_regularize)
             return bce_loss + regularization
@@ -140,7 +143,7 @@ class LogisticRegression(BaseRegression):
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> float:
         """
         Compute log-likelihood for logistic regression.
@@ -163,9 +166,7 @@ class LogisticRegression(BaseRegression):
             logits = torch.matmul(X, self.coef_)
 
             # Use log-sum-exp trick for numerical stability
-            log_probs = -F.binary_cross_entropy_with_logits(
-                logits, y, reduction='none'
-            )
+            log_probs = -F.binary_cross_entropy_with_logits(logits, y, reduction="none")
 
             if sample_weight is None:
                 log_likelihood = torch.sum(log_probs).item()
@@ -178,7 +179,7 @@ class LogisticRegression(BaseRegression):
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> None:
         """
         Fit the logistic regression model.
@@ -207,15 +208,15 @@ class LogisticRegression(BaseRegression):
         self.coef_.requires_grad_(True)
 
         # Choose and set up optimizer
-        if self.solver == 'lbfgs':
+        if self.solver == "lbfgs":
             optimizer = torch.optim.LBFGS(
                 [self.coef_],
                 max_iter=self.max_iter,
                 tolerance_grad=self.tol,
                 tolerance_change=self.tol * 1e-2,
-                line_search_fn='strong_wolfe'
+                line_search_fn="strong_wolfe",
             )
-        elif self.solver == 'adam':
+        elif self.solver == "adam":
             optimizer = torch.optim.Adam([self.coef_], lr=0.01)
         else:  # sgd
             optimizer = torch.optim.SGD([self.coef_], lr=0.01)
@@ -228,11 +229,11 @@ class LogisticRegression(BaseRegression):
             return loss
 
         # Optimization loop
-        prev_loss = float('inf')
+        prev_loss = float("inf")
         self.n_iter_ = 0
 
         for iteration in range(self.max_iter):
-            if self.solver == 'lbfgs':
+            if self.solver == "lbfgs":
                 optimizer.step(closure)
             else:
                 optimizer.zero_grad()
@@ -242,7 +243,9 @@ class LogisticRegression(BaseRegression):
 
             # Check convergence
             with torch.no_grad():
-                current_loss = self._compute_loss(X_with_intercept, y_binary, sample_weight).item()
+                current_loss = self._compute_loss(
+                    X_with_intercept, y_binary, sample_weight
+                ).item()
 
                 if abs(prev_loss - current_loss) < self.tol:
                     break
@@ -258,7 +261,7 @@ class LogisticRegression(BaseRegression):
             warnings.warn(
                 f"Maximum number of iterations ({self.max_iter}) reached. "
                 "The optimization may not have converged.",
-                RuntimeWarning
+                RuntimeWarning,
             )
 
         # Check for perfect separation
@@ -273,7 +276,7 @@ class LogisticRegression(BaseRegression):
             if torch.all(predicted_classes == y):
                 warnings.warn(
                     "Perfect separation detected. Standard errors may be unreliable.",
-                    RuntimeWarning
+                    RuntimeWarning,
                 )
 
     def _predict_tensor(self, X: torch.Tensor) -> torch.Tensor:
@@ -281,7 +284,7 @@ class LogisticRegression(BaseRegression):
         logits = torch.matmul(X, self.coef_)
         return torch.sigmoid(logits)
 
-    def predict_proba(self, X: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
+    def predict_proba(self, X: np.ndarray | torch.Tensor) -> np.ndarray:
         """
         Predict class probabilities.
 
@@ -309,7 +312,7 @@ class LogisticRegression(BaseRegression):
         probabilities = torch.stack([prob_negative, prob_positive], dim=1)
         return probabilities.cpu().numpy()
 
-    def predict(self, X: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
+    def predict(self, X: np.ndarray | torch.Tensor) -> np.ndarray:
         """
         Make binary class predictions.
 
@@ -337,7 +340,7 @@ class LogisticRegression(BaseRegression):
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> None:
         """
         Compute statistical measures for the fitted model.
@@ -355,7 +358,9 @@ class LogisticRegression(BaseRegression):
         y_binary = self._validate_targets(y)
 
         # Compute log-likelihood
-        self.log_likelihood_ = self._compute_log_likelihood(X_with_intercept, y_binary, sample_weight)
+        self.log_likelihood_ = self._compute_log_likelihood(
+            X_with_intercept, y_binary, sample_weight
+        )
 
         # Compute covariance matrix and standard errors using observed information matrix
         self._compute_covariance_matrix(X_with_intercept, y_binary, sample_weight)
@@ -366,17 +371,20 @@ class LogisticRegression(BaseRegression):
         # Compute model statistics
         n_params = len(self.coef_)
         model_stats = compute_model_statistics(
-            y_binary, self._predict_tensor(X_with_intercept),
-            self.log_likelihood_, n_params, 'logistic'
+            y_binary,
+            self._predict_tensor(X_with_intercept),
+            self.log_likelihood_,
+            n_params,
+            "logistic",
         )
-        self.aic_ = model_stats['aic']
-        self.bic_ = model_stats['bic']
+        self.aic_ = model_stats["aic"]
+        self.bic_ = model_stats["bic"]
 
     def _compute_covariance_matrix(
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        sample_weight: Optional[torch.Tensor] = None
+        sample_weight: torch.Tensor | None = None,
     ) -> None:
         """
         Compute parameter covariance matrix using observed information matrix.
@@ -417,7 +425,7 @@ class LogisticRegression(BaseRegression):
                 reg_term = 1e-8 * torch.eye(
                     info_matrix_double.shape[0],
                     device=info_matrix_double.device,
-                    dtype=info_matrix_double.dtype
+                    dtype=info_matrix_double.dtype,
                 )
                 info_matrix_double += reg_term
 
@@ -427,7 +435,7 @@ class LogisticRegression(BaseRegression):
         except RuntimeError:
             warnings.warn(
                 "Could not compute covariance matrix. Standard errors will not be available.",
-                RuntimeWarning
+                RuntimeWarning,
             )
             self.covariance_matrix_ = None
 
@@ -441,7 +449,7 @@ class LogisticRegression(BaseRegression):
         # But return dof for compatibility
         return max(1, self.n_obs_ - len(self.coef_))
 
-    def decision_function(self, X: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
+    def decision_function(self, X: np.ndarray | torch.Tensor) -> np.ndarray:
         """
         Compute the decision function (log-odds).
 
@@ -467,9 +475,7 @@ class LogisticRegression(BaseRegression):
         return logits.cpu().numpy()
 
     def score(
-        self,
-        X: Union[np.ndarray, torch.Tensor],
-        y: Union[np.ndarray, torch.Tensor]
+        self, X: np.ndarray | torch.Tensor, y: np.ndarray | torch.Tensor
     ) -> float:
         """
         Return the mean accuracy on the given test data and labels.

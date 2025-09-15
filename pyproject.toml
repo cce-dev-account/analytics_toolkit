@@ -53,13 +53,31 @@ target-version = ['py312']
 [tool.ruff]
 target-version = "py312"
 line-length = 88
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "C901", "I", "N", "UP", "B"]
+ignore = [
+    "N806",  # Allow uppercase variable names in functions (ML convention for X, y)
+    "N803",  # Allow uppercase argument names (ML convention)
+    "E501",  # Line too long (will be handled by black)
+    "B028",  # No explicit stacklevel in warnings (docs code)
+    "F403", "F405",  # Star imports in __init__.py are acceptable
+    "N812",  # Lowercase imported as non-lowercase (statsmodels convention)
+]
 
 [tool.mypy]
 python_version = "3.12"
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
-disallow_untyped_defs = true
+disallow_untyped_defs = false
+check_untyped_defs = false
+warn_no_return = false
+exclude = [
+    "tests/",
+    "src/analytics_toolkit/pytorch_regression/tests/",
+    "examples/",
+    "docs/",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

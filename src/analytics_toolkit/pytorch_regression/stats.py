@@ -2,16 +2,14 @@
 Statistical computation functions for PyTorch regression module.
 """
 
+
 import numpy as np
-import pandas as pd
 import torch
 from scipy import stats
-from typing import Union, Tuple, Dict, Optional
 
 
 def compute_standard_errors(
-    covariance_matrix: torch.Tensor,
-    use_torch: bool = False
+    covariance_matrix: torch.Tensor, use_torch: bool = False
 ) -> torch.Tensor:
     """
     Compute standard errors from covariance matrix.
@@ -38,9 +36,7 @@ def compute_standard_errors(
 
 
 def compute_test_statistics(
-    coef: torch.Tensor,
-    std_errors: torch.Tensor,
-    distribution: str = 't'
+    coef: torch.Tensor, std_errors: torch.Tensor, distribution: str = "t"
 ) -> torch.Tensor:
     """
     Compute test statistics (t or z statistics).
@@ -65,9 +61,7 @@ def compute_test_statistics(
 
 
 def compute_p_values(
-    test_stats: torch.Tensor,
-    dof: int,
-    distribution: str = 't'
+    test_stats: torch.Tensor, dof: int, distribution: str = "t"
 ) -> np.ndarray:
     """
     Compute p-values from test statistics.
@@ -88,10 +82,10 @@ def compute_p_values(
     """
     test_stats_np = test_stats.detach().cpu().numpy()
 
-    if distribution == 't':
+    if distribution == "t":
         # Two-tailed t-test
         p_values = 2 * (1 - stats.t.cdf(np.abs(test_stats_np), df=dof))
-    elif distribution == 'z':
+    elif distribution == "z":
         # Two-tailed z-test
         p_values = 2 * (1 - stats.norm.cdf(np.abs(test_stats_np)))
     else:
@@ -105,8 +99,8 @@ def compute_confidence_intervals(
     std_errors: torch.Tensor,
     alpha: float = 0.05,
     dof: int = None,
-    distribution: str = 't'
-) -> Tuple[np.ndarray, np.ndarray]:
+    distribution: str = "t",
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Compute confidence intervals for coefficients.
 
@@ -133,9 +127,9 @@ def compute_confidence_intervals(
     coef_np = coef.detach().cpu().numpy()
     std_errors_np = std_errors.detach().cpu().numpy()
 
-    if distribution == 't' and dof is not None:
+    if distribution == "t" and dof is not None:
         critical_value = stats.t.ppf(1 - alpha / 2, df=dof)
-    elif distribution == 'z':
+    elif distribution == "z":
         critical_value = stats.norm.ppf(1 - alpha / 2)
     else:
         # Default to normal distribution
@@ -153,8 +147,8 @@ def compute_model_statistics(
     y_pred: torch.Tensor,
     log_likelihood: float,
     n_params: int,
-    model_type: str = 'linear'
-) -> Dict[str, float]:
+    model_type: str = "linear",
+) -> dict[str, float]:
     """
     Compute model fit statistics.
 
@@ -179,14 +173,14 @@ def compute_model_statistics(
     n_obs = len(y_true)
 
     stats_dict = {
-        'log_likelihood': log_likelihood,
-        'aic': 2 * n_params - 2 * log_likelihood,
-        'bic': n_params * np.log(n_obs) - 2 * log_likelihood,
-        'n_obs': n_obs,
-        'n_params': n_params
+        "log_likelihood": log_likelihood,
+        "aic": 2 * n_params - 2 * log_likelihood,
+        "bic": n_params * np.log(n_obs) - 2 * log_likelihood,
+        "n_obs": n_obs,
+        "n_params": n_params,
     }
 
-    if model_type == 'linear':
+    if model_type == "linear":
         # R-squared and adjusted R-squared
         y_true_np = y_true.detach().cpu().numpy()
         y_pred_np = y_pred.detach().cpu().numpy()
@@ -197,14 +191,16 @@ def compute_model_statistics(
         r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
         adj_r_squared = 1 - (1 - r_squared) * (n_obs - 1) / (n_obs - n_params)
 
-        stats_dict.update({
-            'r_squared': r_squared,
-            'adj_r_squared': adj_r_squared,
-            'mse': ss_res / n_obs,
-            'rmse': np.sqrt(ss_res / n_obs)
-        })
+        stats_dict.update(
+            {
+                "r_squared": r_squared,
+                "adj_r_squared": adj_r_squared,
+                "mse": ss_res / n_obs,
+                "rmse": np.sqrt(ss_res / n_obs),
+            }
+        )
 
-    elif model_type == 'logistic':
+    elif model_type == "logistic":
         # Pseudo R-squared (McFadden's)
         # Assuming null log-likelihood is available
         # For now, compute a simple classification accuracy
@@ -212,7 +208,7 @@ def compute_model_statistics(
         y_pred_binary = (y_pred > 0.5).float().detach().cpu().numpy()
 
         accuracy = np.mean(y_true_np == y_pred_binary)
-        stats_dict['accuracy'] = accuracy
+        stats_dict["accuracy"] = accuracy
 
     return stats_dict
 
@@ -221,9 +217,9 @@ def format_summary_table(
     coef: torch.Tensor,
     std_err: torch.Tensor,
     feature_names: list,
-    model_stats: Dict[str, float],
+    model_stats: dict[str, float],
     dof: int,
-    distribution: str = 't'
+    distribution: str = "t",
 ) -> str:
     """
     Format a statistical summary table.
@@ -253,7 +249,9 @@ def format_summary_table(
     p_values = compute_p_values(test_stats, dof, distribution)
 
     # Compute confidence intervals
-    lower, upper = compute_confidence_intervals(coef, std_err, dof=dof, distribution=distribution)
+    lower, upper = compute_confidence_intervals(
+        coef, std_err, dof=dof, distribution=distribution
+    )
 
     # Convert to numpy for formatting
     coef_np = coef.detach().cpu().numpy()
@@ -273,22 +271,24 @@ def format_summary_table(
     summary_lines.append("-" * 80)
 
     for i, name in enumerate(feature_names):
-        line = (f"{name:<15} {coef_np[i]:>9.3f} {std_err_np[i]:>9.3f} "
-                f"{test_stats_np[i]:>7.2f} {p_values[i]:>7.3f} "
-                f"{lower[i]:>9.3f} {upper[i]:>9.3f}")
+        line = (
+            f"{name:<15} {coef_np[i]:>9.3f} {std_err_np[i]:>9.3f} "
+            f"{test_stats_np[i]:>7.2f} {p_values[i]:>7.3f} "
+            f"{lower[i]:>9.3f} {upper[i]:>9.3f}"
+        )
         summary_lines.append(line)
 
     summary_lines.append("=" * 80)
     summary_lines.append("")
 
     # Model statistics
-    if 'r_squared' in model_stats:
+    if "r_squared" in model_stats:
         summary_lines.append(f"R-squared:         {model_stats['r_squared']:>8.3f}")
         summary_lines.append(f"Adj. R-squared:    {model_stats['adj_r_squared']:>8.3f}")
-        if 'mse' in model_stats:
+        if "mse" in model_stats:
             summary_lines.append(f"Mean Squared Error: {model_stats['mse']:>7.3f}")
 
-    if 'accuracy' in model_stats:
+    if "accuracy" in model_stats:
         summary_lines.append(f"Accuracy:          {model_stats['accuracy']:>8.3f}")
 
     summary_lines.append(f"Log-Likelihood:    {model_stats['log_likelihood']:>8.2f}")
@@ -303,9 +303,7 @@ def format_summary_table(
 
 
 def compute_residuals(
-    y_true: torch.Tensor,
-    y_pred: torch.Tensor,
-    residual_type: str = 'raw'
+    y_true: torch.Tensor, y_pred: torch.Tensor, residual_type: str = "raw"
 ) -> torch.Tensor:
     """
     Compute different types of residuals.
@@ -326,26 +324,24 @@ def compute_residuals(
     """
     raw_residuals = y_true - y_pred
 
-    if residual_type == 'raw':
+    if residual_type == "raw":
         return raw_residuals
-    elif residual_type == 'standardized':
+    elif residual_type == "standardized":
         # Standardized residuals = residuals / sqrt(MSE)
-        mse = torch.mean(raw_residuals ** 2)
+        mse = torch.mean(raw_residuals**2)
         return raw_residuals / torch.sqrt(mse)
-    elif residual_type == 'studentized':
+    elif residual_type == "studentized":
         # Simplified studentized residuals (without leverage)
         # For full studentized residuals, leverage values are needed
-        mse = torch.mean(raw_residuals ** 2)
+        mse = torch.mean(raw_residuals**2)
         return raw_residuals / torch.sqrt(mse)
     else:
         raise ValueError(f"Unknown residual type: {residual_type}")
 
 
 def compute_information_criteria(
-    log_likelihood: float,
-    n_params: int,
-    n_obs: int
-) -> Dict[str, float]:
+    log_likelihood: float, n_params: int, n_obs: int
+) -> dict[str, float]:
     """
     Compute various information criteria.
 
@@ -372,8 +368,4 @@ def compute_information_criteria(
     else:
         aicc = aic
 
-    return {
-        'aic': aic,
-        'bic': bic,
-        'aicc': aicc
-    }
+    return {"aic": aic, "bic": bic, "aicc": aicc}

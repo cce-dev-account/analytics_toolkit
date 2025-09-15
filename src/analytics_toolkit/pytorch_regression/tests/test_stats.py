@@ -2,21 +2,20 @@
 Tests for statistical computation functions.
 """
 
-import pytest
 import numpy as np
-import pandas as pd
+import pytest
 import torch
 from scipy import stats
 
 from ..stats import (
+    compute_confidence_intervals,
+    compute_information_criteria,
+    compute_model_statistics,
+    compute_p_values,
+    compute_residuals,
     compute_standard_errors,
     compute_test_statistics,
-    compute_p_values,
-    compute_confidence_intervals,
-    compute_model_statistics,
     format_summary_table,
-    compute_residuals,
-    compute_information_criteria
 )
 
 
@@ -39,13 +38,17 @@ class TestStats:
     def test_compute_standard_errors(self, sample_covariance_matrix):
         """Test standard error computation."""
         # Test with torch computation
-        std_errors_torch = compute_standard_errors(sample_covariance_matrix, use_torch=True)
+        std_errors_torch = compute_standard_errors(
+            sample_covariance_matrix, use_torch=True
+        )
         assert isinstance(std_errors_torch, torch.Tensor)
         assert len(std_errors_torch) == 4
         assert torch.all(std_errors_torch > 0)
 
         # Test with numpy computation (default)
-        std_errors_numpy = compute_standard_errors(sample_covariance_matrix, use_torch=False)
+        std_errors_numpy = compute_standard_errors(
+            sample_covariance_matrix, use_torch=False
+        )
         assert isinstance(std_errors_numpy, torch.Tensor)
         assert len(std_errors_numpy) == 4
         assert torch.all(std_errors_numpy > 0)
@@ -62,17 +65,19 @@ class TestStats:
         std_errors = torch.tensor([0.5, 0.3, 0.2, 0.8], dtype=torch.float32)
 
         # Test t-statistics
-        t_stats = compute_test_statistics(sample_coefficients, std_errors, 't')
+        t_stats = compute_test_statistics(sample_coefficients, std_errors, "t")
         expected_t = sample_coefficients / std_errors
         torch.testing.assert_close(t_stats, expected_t)
 
         # Test z-statistics (should be same calculation)
-        z_stats = compute_test_statistics(sample_coefficients, std_errors, 'z')
+        z_stats = compute_test_statistics(sample_coefficients, std_errors, "z")
         torch.testing.assert_close(z_stats, t_stats)
 
         # Test with zero standard errors (should not crash)
         std_errors_zero = torch.tensor([0.5, 0.0, 0.2, 0.8], dtype=torch.float32)
-        t_stats_safe = compute_test_statistics(sample_coefficients, std_errors_zero, 't')
+        t_stats_safe = compute_test_statistics(
+            sample_coefficients, std_errors_zero, "t"
+        )
         assert torch.isfinite(t_stats_safe).all()
 
     def test_compute_p_values(self, sample_coefficients):
@@ -82,7 +87,7 @@ class TestStats:
 
         # Test t-distribution p-values
         dof = 95  # degrees of freedom
-        p_values_t = compute_p_values(t_stats, dof, 't')
+        p_values_t = compute_p_values(t_stats, dof, "t")
 
         assert isinstance(p_values_t, np.ndarray)
         assert len(p_values_t) == 4
@@ -90,7 +95,7 @@ class TestStats:
         assert np.all(p_values_t <= 1)
 
         # Test z-distribution p-values
-        p_values_z = compute_p_values(t_stats, dof, 'z')
+        p_values_z = compute_p_values(t_stats, dof, "z")
         assert isinstance(p_values_z, np.ndarray)
         assert len(p_values_z) == 4
 
@@ -105,7 +110,7 @@ class TestStats:
 
         # Test t-distribution intervals
         lower_t, upper_t = compute_confidence_intervals(
-            sample_coefficients, std_errors, alpha=0.05, dof=95, distribution='t'
+            sample_coefficients, std_errors, alpha=0.05, dof=95, distribution="t"
         )
 
         assert isinstance(lower_t, np.ndarray)
@@ -120,7 +125,7 @@ class TestStats:
 
         # Test z-distribution intervals
         lower_z, upper_z = compute_confidence_intervals(
-            sample_coefficients, std_errors, alpha=0.05, distribution='z'
+            sample_coefficients, std_errors, alpha=0.05, distribution="z"
         )
 
         # Z intervals should be narrower than t intervals (for reasonable dof)
@@ -149,29 +154,38 @@ class TestStats:
         n_params = 5
 
         stats_dict = compute_model_statistics(
-            y_true, y_pred, log_likelihood, n_params, 'linear'
+            y_true, y_pred, log_likelihood, n_params, "linear"
         )
 
         # Check required keys
-        required_keys = ['log_likelihood', 'aic', 'bic', 'n_obs', 'n_params',
-                        'r_squared', 'adj_r_squared', 'mse', 'rmse']
+        required_keys = [
+            "log_likelihood",
+            "aic",
+            "bic",
+            "n_obs",
+            "n_params",
+            "r_squared",
+            "adj_r_squared",
+            "mse",
+            "rmse",
+        ]
         for key in required_keys:
             assert key in stats_dict
 
         # Check values are reasonable
-        assert stats_dict['n_obs'] == n_obs
-        assert stats_dict['n_params'] == n_params
-        assert stats_dict['log_likelihood'] == log_likelihood
-        assert 0 <= stats_dict['r_squared'] <= 1
-        assert stats_dict['mse'] > 0
-        assert stats_dict['rmse'] > 0
-        assert stats_dict['rmse'] == np.sqrt(stats_dict['mse'])
+        assert stats_dict["n_obs"] == n_obs
+        assert stats_dict["n_params"] == n_params
+        assert stats_dict["log_likelihood"] == log_likelihood
+        assert 0 <= stats_dict["r_squared"] <= 1
+        assert stats_dict["mse"] > 0
+        assert stats_dict["rmse"] > 0
+        assert stats_dict["rmse"] == np.sqrt(stats_dict["mse"])
 
         # AIC and BIC formulas
         expected_aic = 2 * n_params - 2 * log_likelihood
         expected_bic = n_params * np.log(n_obs) - 2 * log_likelihood
-        assert abs(stats_dict['aic'] - expected_aic) < 1e-6
-        assert abs(stats_dict['bic'] - expected_bic) < 1e-6
+        assert abs(stats_dict["aic"] - expected_aic) < 1e-6
+        assert abs(stats_dict["bic"] - expected_bic) < 1e-6
 
     def test_compute_model_statistics_logistic(self):
         """Test model statistics for logistic regression."""
@@ -184,31 +198,38 @@ class TestStats:
         n_params = 4
 
         stats_dict = compute_model_statistics(
-            y_true, y_pred, log_likelihood, n_params, 'logistic'
+            y_true, y_pred, log_likelihood, n_params, "logistic"
         )
 
         # Check required keys
-        required_keys = ['log_likelihood', 'aic', 'bic', 'n_obs', 'n_params', 'accuracy']
+        required_keys = [
+            "log_likelihood",
+            "aic",
+            "bic",
+            "n_obs",
+            "n_params",
+            "accuracy",
+        ]
         for key in required_keys:
             assert key in stats_dict
 
         # Check values are reasonable
-        assert stats_dict['n_obs'] == n_obs
-        assert stats_dict['n_params'] == n_params
-        assert 0 <= stats_dict['accuracy'] <= 1
+        assert stats_dict["n_obs"] == n_obs
+        assert stats_dict["n_params"] == n_params
+        assert 0 <= stats_dict["accuracy"] <= 1
 
     def test_format_summary_table(self, sample_coefficients):
         """Test summary table formatting."""
         std_errors = torch.tensor([0.5, 0.3, 0.2, 0.8], dtype=torch.float32)
-        feature_names = ['const', 'x1', 'x2', 'x3']
+        feature_names = ["const", "x1", "x2", "x3"]
         model_stats = {
-            'log_likelihood': -50.2,
-            'aic': 108.4,
-            'bic': 119.1,
-            'n_obs': 100,
-            'n_params': 4,
-            'r_squared': 0.75,
-            'adj_r_squared': 0.73
+            "log_likelihood": -50.2,
+            "aic": 108.4,
+            "bic": 119.1,
+            "n_obs": 100,
+            "n_params": 4,
+            "r_squared": 0.75,
+            "adj_r_squared": 0.73,
         }
         dof = 96
 
@@ -219,13 +240,13 @@ class TestStats:
         assert isinstance(summary, str)
 
         # Check that important elements are in the summary
-        assert 'Statistical Summary' in summary
-        assert 'coef' in summary
-        assert 'std err' in summary
-        assert 'R-squared' in summary
-        assert 'Log-Likelihood' in summary
-        assert 'AIC' in summary
-        assert 'BIC' in summary
+        assert "Statistical Summary" in summary
+        assert "coef" in summary
+        assert "std err" in summary
+        assert "R-squared" in summary
+        assert "Log-Likelihood" in summary
+        assert "AIC" in summary
+        assert "BIC" in summary
 
         # Check that all feature names appear
         for name in feature_names:
@@ -241,24 +262,24 @@ class TestStats:
         y_pred = torch.tensor([1.1, 1.9, 3.2, 3.8, 5.1])
 
         # Test raw residuals
-        raw_residuals = compute_residuals(y_true, y_pred, 'raw')
+        raw_residuals = compute_residuals(y_true, y_pred, "raw")
         expected_raw = y_true - y_pred
         torch.testing.assert_close(raw_residuals, expected_raw)
 
         # Test standardized residuals
-        std_residuals = compute_residuals(y_true, y_pred, 'standardized')
+        std_residuals = compute_residuals(y_true, y_pred, "standardized")
         mse = torch.mean((y_true - y_pred) ** 2)
         expected_std = (y_true - y_pred) / torch.sqrt(mse)
         torch.testing.assert_close(std_residuals, expected_std)
 
         # Test studentized residuals (simplified version)
-        student_residuals = compute_residuals(y_true, y_pred, 'studentized')
+        student_residuals = compute_residuals(y_true, y_pred, "studentized")
         # Should be same as standardized in this simplified implementation
         torch.testing.assert_close(student_residuals, std_residuals)
 
         # Test invalid residual type
         with pytest.raises(ValueError):
-            compute_residuals(y_true, y_pred, 'invalid')
+            compute_residuals(y_true, y_pred, "invalid")
 
     def test_compute_information_criteria(self):
         """Test information criteria computation."""
@@ -269,24 +290,24 @@ class TestStats:
         criteria = compute_information_criteria(log_likelihood, n_params, n_obs)
 
         # Check that all criteria are computed
-        assert 'aic' in criteria
-        assert 'bic' in criteria
-        assert 'aicc' in criteria
+        assert "aic" in criteria
+        assert "bic" in criteria
+        assert "aicc" in criteria
 
         # Check formulas
         expected_aic = 2 * n_params - 2 * log_likelihood
         expected_bic = n_params * np.log(n_obs) - 2 * log_likelihood
 
-        assert abs(criteria['aic'] - expected_aic) < 1e-6
-        assert abs(criteria['bic'] - expected_bic) < 1e-6
+        assert abs(criteria["aic"] - expected_aic) < 1e-6
+        assert abs(criteria["bic"] - expected_bic) < 1e-6
 
         # For large samples, AICc should be close to AIC
-        assert abs(criteria['aicc'] - criteria['aic']) < 1.0
+        assert abs(criteria["aicc"] - criteria["aic"]) < 1.0
 
         # Test small sample correction
         criteria_small = compute_information_criteria(log_likelihood, n_params, 15)
         # AICc should be noticeably different from AIC for small samples
-        assert abs(criteria_small['aicc'] - criteria_small['aic']) > 1.0
+        assert abs(criteria_small["aicc"] - criteria_small["aic"]) > 1.0
 
     def test_edge_cases(self):
         """Test edge cases and error conditions."""
@@ -303,7 +324,7 @@ class TestStats:
         torch.testing.assert_close(t_stats, expected_zeros)
 
         # Test p-values with zero test statistics
-        p_vals = compute_p_values(t_stats, 95, 't')
+        p_vals = compute_p_values(t_stats, 95, "t")
         # P-values for zero t-statistics should be 1.0
         np.testing.assert_allclose(p_vals, 1.0, rtol=1e-6)
 
@@ -316,7 +337,7 @@ class TestStats:
         t_stats = compute_test_statistics(large_coef, large_std)
         assert torch.all(torch.isfinite(t_stats))
 
-        p_vals = compute_p_values(t_stats, 100, 't')
+        p_vals = compute_p_values(t_stats, 100, "t")
         assert np.all(np.isfinite(p_vals))
         assert np.all(p_vals >= 0)
         assert np.all(p_vals <= 1)
@@ -331,11 +352,9 @@ class TestStats:
 
         # Confidence intervals
         lower_t, upper_t = compute_confidence_intervals(
-            coef, std_err, dof=large_dof, distribution='t'
+            coef, std_err, dof=large_dof, distribution="t"
         )
-        lower_z, upper_z = compute_confidence_intervals(
-            coef, std_err, distribution='z'
-        )
+        lower_z, upper_z = compute_confidence_intervals(coef, std_err, distribution="z")
 
         # Should be very close for large dof
         np.testing.assert_allclose(lower_t, lower_z, rtol=1e-2)
@@ -343,8 +362,8 @@ class TestStats:
 
         # P-values
         t_stats = compute_test_statistics(coef, std_err)
-        p_vals_t = compute_p_values(t_stats, large_dof, 't')
-        p_vals_z = compute_p_values(t_stats, large_dof, 'z')
+        p_vals_t = compute_p_values(t_stats, large_dof, "t")
+        p_vals_z = compute_p_values(t_stats, large_dof, "z")
 
         np.testing.assert_allclose(p_vals_t, p_vals_z, rtol=1e-2)
 
@@ -352,30 +371,32 @@ class TestStats:
         """Test that summary table contains expected statistical content."""
         coef = torch.tensor([1.5, -0.8, 2.3])
         std_err = torch.tensor([0.2, 0.3, 0.4])
-        feature_names = ['const', 'feature1', 'feature2']
+        feature_names = ["const", "feature1", "feature2"]
         model_stats = {
-            'log_likelihood': -89.5,
-            'aic': 185.0,
-            'bic': 191.2,
-            'n_obs': 150,
-            'n_params': 3,
-            'r_squared': 0.823,
-            'adj_r_squared': 0.818
+            "log_likelihood": -89.5,
+            "aic": 185.0,
+            "bic": 191.2,
+            "n_obs": 150,
+            "n_params": 3,
+            "r_squared": 0.823,
+            "adj_r_squared": 0.818,
         }
         dof = 147
 
         summary = format_summary_table(
-            coef, std_err, feature_names, model_stats, dof, 't'
+            coef, std_err, feature_names, model_stats, dof, "t"
         )
 
         # Check for specific statistical values
-        assert '1.500' in summary  # Coefficient value
-        assert '0.200' in summary  # Standard error
-        assert '0.823' in summary  # R-squared
-        assert '185.0' in summary  # AIC
-        assert '147' in summary     # Degrees of freedom
+        assert "1.500" in summary  # Coefficient value
+        assert "0.200" in summary  # Standard error
+        assert "0.823" in summary  # R-squared
+        assert "185.0" in summary  # AIC
+        assert "147" in summary  # Degrees of freedom
 
         # Check statistical significance indicators
-        lines = summary.split('\n')
-        coef_lines = [line for line in lines if any(name in line for name in feature_names)]
+        lines = summary.split("\n")
+        coef_lines = [
+            line for line in lines if any(name in line for name in feature_names)
+        ]
         assert len(coef_lines) >= 3  # Should have lines for all coefficients

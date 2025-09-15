@@ -52,19 +52,10 @@ jobs:
         restore-keys: |
           venv-${{ runner.os }}-${{ matrix.python-version }}-
 
-    - name: Configure Poetry for CPU-only PyTorch
-      run: |
-        echo "Configuring Poetry for CPU-only PyTorch..."
-        poetry config repositories.pytorch-cpu https://download.pytorch.org/whl/cpu || true
-        poetry source add --priority=explicit pytorch-cpu https://download.pytorch.org/whl/cpu || true
-
     - name: Install dependencies
       run: |
-        echo "Installing dependencies..."
-        poetry install --with dev || (echo "Poetry install failed, retrying..." && poetry install --with dev)
-        # Ensure we have CPU-only PyTorch
-        echo "Installing CPU-only PyTorch..."
-        poetry run pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu --force-reinstall || echo "PyTorch install warning: continuing..."
+        echo "Installing dependencies with Poetry..."
+        poetry install --with dev
 
     - name: Verify PyTorch CPU installation
       run: |
