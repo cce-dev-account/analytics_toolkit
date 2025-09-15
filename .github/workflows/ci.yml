@@ -29,7 +29,7 @@ jobs:
 
     - name: Load cached Poetry installation
       id: cached-poetry
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.local
         key: poetry-${{ runner.os }}-${{ matrix.python-version }}
@@ -45,7 +45,7 @@ jobs:
 
     - name: Load cached venv
       id: cached-poetry-dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
@@ -85,7 +85,7 @@ jobs:
         poetry run pytest --cov=src/analytics_toolkit --cov-report=xml --cov-report=html --cov-report=term-missing -v
 
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         file: ./coverage.xml
         flags: unittests
@@ -93,7 +93,7 @@ jobs:
         fail_ci_if_error: false
 
     - name: Upload coverage to GitHub
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: coverage-report-${{ matrix.python-version }}
         path: htmlcov/
@@ -136,7 +136,7 @@ jobs:
       continue-on-error: true
 
     - name: Upload security reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: security-reports-ci
         path: |
@@ -167,7 +167,7 @@ jobs:
       continue-on-error: true
 
     - name: Upload dependency audit report
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dependency-audit
         path: audit-report.json
@@ -195,7 +195,7 @@ jobs:
         poetry build
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: package-builds
         path: dist/
@@ -224,7 +224,7 @@ jobs:
       uses: snok/install-poetry@v1
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: package-builds
         path: dist/
@@ -273,7 +273,7 @@ jobs:
 
     - name: Load cached venv
       id: cached-poetry-dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .venv
         key: venv-docs-${{ runner.os }}-3.12-${{ hashFiles('**/poetry.lock') }}
@@ -301,7 +301,7 @@ jobs:
 
     - name: Upload documentation test artifacts
       if: failure()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: docs-build-logs
         path: docs/_build/
