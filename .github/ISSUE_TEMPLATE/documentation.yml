@@ -1,0 +1,205 @@
+name: 📚 Documentation Improvement
+description: Suggest improvements to documentation, examples, or guides
+title: "[DOCS] "
+labels: ["documentation", "enhancement"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping improve our documentation! Clear documentation is essential for project success.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues to ensure this hasn't been reported
+          required: true
+        - label: I have checked the current documentation for existing coverage
+          required: true
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: 📋 Documentation Type
+      description: What type of documentation needs improvement?
+      options:
+        - "API Documentation"
+        - "User Guide/Tutorial"
+        - "Installation Instructions"
+        - "Code Examples"
+        - "README"
+        - "Contributing Guidelines"
+        - "Architecture/Design Docs"
+        - "Troubleshooting Guide"
+        - "Performance Guide"
+        - "Security Documentation"
+        - "Other"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: 🎯 Issue Type
+      description: What kind of documentation issue is this?
+      options:
+        - "Missing Documentation"
+        - "Incorrect/Outdated Information"
+        - "Unclear/Confusing Content"
+        - "Missing Examples"
+        - "Formatting/Style Issues"
+        - "Broken Links"
+        - "Translation Issues"
+        - "Accessibility Issues"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-issue
+    attributes:
+      label: 🔍 Current Issue
+      description: Describe what's wrong with the current documentation
+      placeholder: |
+        The current documentation is missing/unclear/incorrect because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: 📍 Location
+      description: Where specifically is this documentation issue located?
+      placeholder: |
+        File: docs/user-guide/getting-started.md
+        Section: "Installation"
+        Line: 42
+        URL: https://analytics-toolkit.readthedocs.io/...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-improvement
+    attributes:
+      label: ✨ Proposed Improvement
+      description: Describe how the documentation should be improved
+      placeholder: |
+        The documentation should be improved by...
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggested-content
+    attributes:
+      label: 📝 Suggested Content
+      description: If you have specific content suggestions, provide them here
+      placeholder: |
+        Here's the suggested content:
+
+        ```markdown
+        # Your suggested content here
+        ```
+
+  - type: checkboxes
+    id: target-audience
+    attributes:
+      label: 👥 Target Audience
+      description: Who would benefit from this documentation improvement?
+      options:
+        - label: New users/beginners
+        - label: Intermediate users
+        - label: Advanced users/power users
+        - label: Contributors/developers
+        - label: System administrators
+        - label: Data scientists
+        - label: Machine learning engineers
+        - label: All users
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 📊 Priority Level
+      description: How important is this documentation improvement?
+      options:
+        - "Low - Minor improvement"
+        - "Medium - Helpful enhancement"
+        - "High - Important for user experience"
+        - "Critical - Blocking user adoption"
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-impact
+    attributes:
+      label: 🎯 User Impact
+      description: How does this issue affect users?
+      placeholder: |
+        This documentation issue affects users by...
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples-needed
+    attributes:
+      label: 💻 Examples Needed
+      description: What specific examples would help clarify this documentation?
+      placeholder: |
+        Examples that would help:
+        - Basic usage example
+        - Advanced configuration example
+        - Common error scenarios
+        - Integration examples
+
+  - type: checkboxes
+    id: documentation-format
+    attributes:
+      label: 📄 Preferred Format
+      description: What format would work best for this documentation?
+      options:
+        - label: Written explanation
+        - label: Code examples
+        - label: Step-by-step tutorial
+        - label: Video/visual guide
+        - label: FAQ format
+        - label: Troubleshooting checklist
+        - label: API reference
+        - label: Jupyter notebook example
+
+  - type: textarea
+    id: related-docs
+    attributes:
+      label: 🔗 Related Documentation
+      description: Are there related documentation sections that should be updated?
+      placeholder: |
+        This change might also affect:
+        - docs/api/module.md
+        - README.md section on "Usage"
+        - examples/basic_usage.py
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 Additional Context
+      description: Any other context about this documentation improvement
+      placeholder: |
+        Additional information:
+        - Links to relevant discussions
+        - References to similar projects
+        - User feedback or questions
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 🤝 Contribution
+      description: Are you willing to help improve this documentation?
+      options:
+        - label: I would like to write the documentation myself
+        - label: I can provide content review
+        - label: I can provide technical review
+        - label: I can help with proofreading
+        - label: I can provide examples/use cases
+        - label: I can test the documentation with users

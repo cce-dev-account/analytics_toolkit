@@ -1,0 +1,202 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for the analytics toolkit
+title: "[FEATURE] "
+labels: ["enhancement", "feature-request"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature! Please provide as much detail as possible to help us understand your request.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues to ensure this feature hasn't been requested
+          required: true
+        - label: I have read the [Contributing Guidelines](../../CONTRIBUTING.md)
+          required: true
+        - label: This feature aligns with the project's scope and goals
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 🎯 Feature Summary
+      description: A clear and concise description of the feature you'd like to see
+      placeholder: I would like to see...
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 🔍 Problem Statement
+      description: What problem does this feature solve? What use case does it address?
+      placeholder: This feature would solve...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 💡 Proposed Solution
+      description: Describe your proposed solution in detail
+      placeholder: The feature should work by...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 Alternative Solutions
+      description: Have you considered any alternative solutions or features?
+      placeholder: I also considered...
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 🏷️ Feature Category
+      description: Which category best describes this feature?
+      options:
+        - "Data Processing"
+        - "Machine Learning"
+        - "PyTorch Integration"
+        - "Visualization"
+        - "Performance Optimization"
+        - "API Enhancement"
+        - "Configuration/Settings"
+        - "Documentation"
+        - "Developer Tools"
+        - "Testing/QA"
+        - "Other"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 📊 Priority Level
+      description: How important is this feature to you?
+      options:
+        - "Low - Nice to have"
+        - "Medium - Would improve workflow"
+        - "High - Important for my use case"
+        - "Critical - Blocking my work"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: complexity
+    attributes:
+      label: 🧩 Implementation Complexity
+      description: How complex do you think this feature would be to implement?
+      options:
+        - label: Simple - Minor addition or modification
+        - label: Medium - Requires some design and testing
+        - label: Complex - Major feature requiring significant changes
+        - label: I'm not sure about the complexity
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: 📚 Detailed Use Case
+      description: Provide a detailed example of how this feature would be used
+      placeholder: |
+        Here's how I would use this feature:
+        1. I would import...
+        2. Then I would call...
+        3. The expected output would be...
+    validations:
+      required: true
+
+  - type: textarea
+    id: code-example
+    attributes:
+      label: 💻 Code Example
+      description: Show what the API might look like for this feature
+      placeholder: |
+        ```python
+        import analytics_toolkit as at
+
+        # Example of how the feature might work
+        result = at.new_feature(data, param1="value")
+        ```
+      render: python
+
+  - type: checkboxes
+    id: dependencies
+    attributes:
+      label: 📦 Dependencies
+      description: Would this feature require new dependencies?
+      options:
+        - label: No new dependencies required
+        - label: Minor dependencies (small, well-maintained packages)
+        - label: Major dependencies (large packages like scikit-learn, tensorflow)
+        - label: System dependencies (OS-level requirements)
+        - label: I'm not sure about dependencies
+
+  - type: checkboxes
+    id: compatibility
+    attributes:
+      label: 🔄 Compatibility Considerations
+      description: What compatibility factors should be considered?
+      options:
+        - label: Should work with Python 3.11+
+        - label: Should work with PyTorch 2.0+
+        - label: Should be cross-platform (Windows, macOS, Linux)
+        - label: Should maintain backward compatibility
+        - label: Performance impact should be minimal
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ Acceptance Criteria
+      description: What would need to be true for this feature to be considered complete?
+      placeholder: |
+        - [ ] Feature works as described
+        - [ ] Unit tests are written and pass
+        - [ ] Documentation is updated
+        - [ ] Examples are provided
+        - [ ] Performance is acceptable
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📝 Additional Context
+      description: Add any other context, screenshots, or references
+      placeholder: |
+        Links to relevant papers, libraries, or examples:
+        -
+        -
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 🤝 Contribution
+      description: Are you willing to help implement this feature?
+      options:
+        - label: I would like to implement this feature myself
+        - label: I can help with design and testing
+        - label: I can provide domain expertise
+        - label: I can help with documentation
+        - label: I can provide feedback during development
+
+  - type: dropdown
+    id: timeline
+    attributes:
+      label: ⏰ Desired Timeline
+      description: When would you ideally like to see this feature?
+      options:
+        - "No rush - whenever it fits the roadmap"
+        - "Next few months would be great"
+        - "Needed within a month"
+        - "Urgently needed"
