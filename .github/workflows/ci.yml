@@ -37,6 +37,7 @@ jobs:
     - name: Install dependencies
       run: |
         echo "Installing dependencies with Poetry..."
+        poetry lock --no-update || echo "Lock file generation failed, continuing..."
         poetry install --with dev --no-interaction
 
     - name: Verify PyTorch CPU installation
