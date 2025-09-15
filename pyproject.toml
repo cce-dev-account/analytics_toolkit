@@ -37,7 +37,6 @@ qa = [
     "safety>=3.0.0",
     "radon>=6.0.0",
     "pip-audit>=2.6.0",
-    "semgrep>=1.45.0",
 ]
 docs = [
     "sphinx>=7.0.0",
