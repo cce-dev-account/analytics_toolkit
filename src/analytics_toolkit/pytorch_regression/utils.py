@@ -111,7 +111,24 @@ def create_dummy_variables(
                 df_col = df_encoded[col]
 
             # Create dummy variables (drop first category as reference)
-            dummies = pd.get_dummies(df_col, prefix=col, drop_first=True)
+            # If we have existing mappings, ensure consistent columns
+            if col in mappings:
+                # Create all possible dummy columns based on training data
+                expected_categories = mappings[col][1:]  # Skip first (reference) category
+                expected_columns = [f"{col}_{cat}" for cat in expected_categories]
+
+                # Create dummies for current data
+                dummies = pd.get_dummies(df_col, prefix=col, drop_first=True)
+
+                # Ensure all expected columns exist (fill missing with zeros)
+                for expected_col in expected_columns:
+                    if expected_col not in dummies.columns:
+                        dummies[expected_col] = 0
+
+                # Reorder columns to match expected order
+                dummies = dummies.reindex(columns=expected_columns, fill_value=0)
+            else:
+                dummies = pd.get_dummies(df_col, prefix=col, drop_first=True)
 
             # Remove original column and add dummies
             df_encoded = df_encoded.drop(columns=[col])

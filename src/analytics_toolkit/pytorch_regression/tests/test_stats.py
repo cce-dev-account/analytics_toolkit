@@ -54,11 +54,11 @@ class TestStats:
         assert torch.all(std_errors_numpy > 0)
 
         # Results should be similar
-        torch.testing.assert_close(std_errors_torch, std_errors_numpy, rtol=1e-5)
+        torch.testing.assert_close(std_errors_torch, std_errors_numpy, rtol=1e-5, atol=1e-8)
 
         # Should be square root of diagonal
         expected = torch.sqrt(torch.diag(sample_covariance_matrix))
-        torch.testing.assert_close(std_errors_numpy, expected, rtol=1e-5)
+        torch.testing.assert_close(std_errors_numpy, expected, rtol=1e-5, atol=1e-8)
 
     def test_compute_test_statistics(self, sample_coefficients):
         """Test test statistic computation."""
@@ -67,11 +67,11 @@ class TestStats:
         # Test t-statistics
         t_stats = compute_test_statistics(sample_coefficients, std_errors, "t")
         expected_t = sample_coefficients / std_errors
-        torch.testing.assert_close(t_stats, expected_t)
+        torch.testing.assert_close(t_stats, expected_t, rtol=1e-5, atol=1e-8)
 
         # Test z-statistics (should be same calculation)
         z_stats = compute_test_statistics(sample_coefficients, std_errors, "z")
-        torch.testing.assert_close(z_stats, t_stats)
+        torch.testing.assert_close(z_stats, t_stats, rtol=1e-5, atol=1e-8)
 
         # Test with zero standard errors (should not crash)
         std_errors_zero = torch.tensor([0.5, 0.0, 0.2, 0.8], dtype=torch.float32)
@@ -264,18 +264,18 @@ class TestStats:
         # Test raw residuals
         raw_residuals = compute_residuals(y_true, y_pred, "raw")
         expected_raw = y_true - y_pred
-        torch.testing.assert_close(raw_residuals, expected_raw)
+        torch.testing.assert_close(raw_residuals, expected_raw, rtol=1e-5, atol=1e-8)
 
         # Test standardized residuals
         std_residuals = compute_residuals(y_true, y_pred, "standardized")
         mse = torch.mean((y_true - y_pred) ** 2)
         expected_std = (y_true - y_pred) / torch.sqrt(mse)
-        torch.testing.assert_close(std_residuals, expected_std)
+        torch.testing.assert_close(std_residuals, expected_std, rtol=1e-5, atol=1e-8)
 
         # Test studentized residuals (simplified version)
         student_residuals = compute_residuals(y_true, y_pred, "studentized")
         # Should be same as standardized in this simplified implementation
-        torch.testing.assert_close(student_residuals, std_residuals)
+        torch.testing.assert_close(student_residuals, std_residuals, rtol=1e-5, atol=1e-8)
 
         # Test invalid residual type
         with pytest.raises(ValueError):
@@ -321,7 +321,7 @@ class TestStats:
         std_err = torch.ones(3)
         t_stats = compute_test_statistics(zero_coef, std_err)
         expected_zeros = torch.zeros(3)
-        torch.testing.assert_close(t_stats, expected_zeros)
+        torch.testing.assert_close(t_stats, expected_zeros, rtol=1e-5, atol=1e-8)
 
         # Test p-values with zero test statistics
         p_vals = compute_p_values(t_stats, 95, "t")
