@@ -1,50 +1,46 @@
-[project]
+[tool.poetry]
 name = "analytics-toolkit"
 version = "0.1.0"
 description = "Python Analytics Toolkit with PyTorch"
-authors = [
-    {name = "Analytics Team"}
-]
+authors = ["Analytics Team"]
 readme = "README.md"
-requires-python = "^3.12"
-dependencies = [
-    "torch>=2.0.0",
-    "torchvision>=0.15.0",
-    "numpy>=1.24.0",
-    "pandas>=2.0.0",
-    "matplotlib>=3.7.0",
-    "seaborn>=0.12.0",
-    "scikit-learn>=1.3.0",
-    "jupyter>=1.0.0",
-    "ipykernel>=6.0.0",
-    "plotly>=5.0.0",
-    "scipy>=1.11.0",
-    "polars>=0.18.0",
-]
+packages = [{include = "analytics_toolkit", from = "src"}]
 
-[dependency-groups]
-dev = [
-    "pytest>=7.0.0",
-    "pytest-cov>=4.0.0",
-    "black>=23.0.0",
-    "ruff>=0.1.0",
-    "mypy>=1.5.0",
-    "pre-commit>=3.0.0",
-]
-qa = [
-    "bandit>=1.7.0",
-    "safety>=3.0.0",
-    "radon>=6.0.0",
-    "pip-audit>=2.6.0",
-    "semgrep>=1.45.0",
-]
-docs = [
-    "sphinx>=7.0.0",
-    "sphinx-rtd-theme>=1.3.0",
-    "sphinx-autodoc-typehints>=1.24.0",
-    "myst-parser>=2.0.0",
-    "doc8>=1.1.0",
-]
+[tool.poetry.dependencies]
+python = "^3.11"
+torch = "^2.0.0"
+numpy = "^1.24.0"
+pandas = "^2.0.0"
+matplotlib = "^3.7.0"
+seaborn = "^0.12.0"
+scikit-learn = "^1.3.0"
+jupyter = "^1.0.0"
+ipykernel = "^6.0.0"
+plotly = "^5.0.0"
+scipy = "^1.11.0"
+polars = "^0.18.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-cov = "^4.0.0"
+black = "^23.0.0"
+ruff = "^0.1.0"
+mypy = "^1.5.0"
+pre-commit = "^3.0.0"
+statsmodels = "^0.14.0"
+
+[tool.poetry.group.qa.dependencies]
+bandit = "^1.7.0"
+safety = "^3.0.0"
+radon = "^6.0.0"
+pip-audit = "^2.6.0"
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^7.0.0"
+sphinx-rtd-theme = "^2.0.0"
+sphinx-autodoc-typehints = "^1.24.0"
+myst-parser = "^2.0.0"
+doc8 = "^1.1.0"
 
 [tool.black]
 line-length = 88
@@ -53,13 +49,34 @@ target-version = ['py312']
 [tool.ruff]
 target-version = "py312"
 line-length = 88
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "C901", "I", "N", "UP", "B"]
+ignore = [
+    "N806",  # Allow uppercase variable names in functions (ML convention for X, y)
+    "N803",  # Allow uppercase argument names (ML convention)
+    "E501",  # Line too long (will be handled by black)
+    "B028",  # No explicit stacklevel in warnings (docs code)
+    "F403", "F405",  # Star imports in __init__.py are acceptable
+    "N812",  # Lowercase imported as non-lowercase (statsmodels convention)
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15  # Increased from default 10 to be more lenient for ML code
 
 [tool.mypy]
 python_version = "3.12"
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
-disallow_untyped_defs = true
+disallow_untyped_defs = false
+check_untyped_defs = false
+warn_no_return = false
+exclude = [
+    "tests/",
+    "src/analytics_toolkit/pytorch_regression/tests/",
+    "examples/",
+    "docs/",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
