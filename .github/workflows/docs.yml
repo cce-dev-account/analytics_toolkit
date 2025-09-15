@@ -45,7 +45,7 @@ jobs:
 
     - name: Load cached venv
       id: cached-poetry-dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .venv
         key: venv-docs-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
@@ -80,7 +80,7 @@ jobs:
         poetry run sphinx-build -b linkcheck . _build/linkcheck || true
 
     - name: Upload documentation artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: documentation
         path: docs/_build/html/
@@ -202,7 +202,7 @@ jobs:
         poetry run sphinx-build -b html . _build/html
 
     - name: Upload preview
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: docs-preview-pr-${{ github.event.number }}
         path: docs/_build/html/
