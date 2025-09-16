@@ -645,6 +645,12 @@ class EnsembleBuilder:
         if self.verbose and self.best_ensemble_:
             print(f"🏆 Best ensemble score: {best_score:.4f}")
 
+        # Fit the best ensemble on the full training data
+        if self.best_ensemble_ is not None:
+            self.best_ensemble_.fit(X, y)
+            if self.verbose:
+                print("✅ Best ensemble fitted on full training data")
+
         return self
 
     def _determine_task_type(self, y: np.ndarray) -> str:

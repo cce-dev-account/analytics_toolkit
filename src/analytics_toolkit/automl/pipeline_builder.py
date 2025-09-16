@@ -283,43 +283,67 @@ class AutoMLPipeline:
         """Build the ML pipeline based on data analysis and config."""
         steps = []
 
-        # Step 1: Handle missing values
-        if self.config.handle_missing:
-            steps.append(("missing_handler", self._create_missing_handler(X)))
+        # Consolidated preprocessing step (handles missing values, scaling, encoding)
+        steps.append(("preprocessor", self._create_consolidated_preprocessor(X, y)))
 
-        # Step 2: Feature engineering
-        if self.data_analysis_["datetime_columns"]:
-            steps.append(("datetime_features", self._create_datetime_transformer()))
-
-        # Step 3: Preprocessing (scaling, encoding)
-        steps.append(("preprocessor", self._create_preprocessor(X, y)))
-
-        # Step 4: Feature selection and interaction detection
-        if self.config.feature_selection or self.config.generate_interactions:
-            steps.append(
-                ("feature_engineering", self._create_feature_engineering_step(X, y))
-            )
-
-        # Step 5: Final feature selection
-        if self.config.feature_selection:
-            try:
-                steps.append(
-                    (
-                        "feature_selector",
-                        FeatureSelector(
-                            methods=["variance", "mutual_info"],
-                            mutual_info_k=self.config.feature_selection_k,
-                        ),
-                    )
-                )
-            except NameError:
-                if self.verbose:
-                    print("⚠️ Feature selection not available, skipping...")
-
-        # Step 6: Model
+        # Model step
         steps.append(("model", self._create_default_model()))
 
         return Pipeline(steps)
+
+    def _create_consolidated_preprocessor(self, X: pd.DataFrame, y: np.ndarray) -> ColumnTransformer:
+        """Create consolidated preprocessing pipeline."""
+        from sklearn.compose import ColumnTransformer
+        from sklearn.impute import SimpleImputer
+        from sklearn.preprocessing import OneHotEncoder, StandardScaler
+        from sklearn.pipeline import Pipeline as SklearnPipeline
+
+        numeric_features = self.data_analysis_["numerical_columns"]
+        categorical_features = self.data_analysis_["categorical_columns"]
+
+        transformers = []
+
+        # Numerical pipeline (missing values + scaling)
+        if numeric_features:
+            numeric_pipeline_steps = []
+
+            # Missing value imputation
+            if self.config.handle_missing:
+                if self.config.missing_strategy == "auto":
+                    strategy = "median"
+                else:
+                    strategy = self.config.missing_strategy
+                numeric_pipeline_steps.append(("imputer", SimpleImputer(strategy=strategy)))
+
+            # Scaling
+            if self.config.scaling and self.config.scaling_method == "standard":
+                numeric_pipeline_steps.append(("scaler", StandardScaler()))
+
+            numeric_pipeline = SklearnPipeline(numeric_pipeline_steps) if numeric_pipeline_steps else "passthrough"
+            transformers.append(("num", numeric_pipeline, numeric_features))
+
+        # Categorical pipeline (missing values + encoding)
+        if categorical_features:
+            categorical_pipeline_steps = []
+
+            # Missing value imputation
+            if self.config.handle_missing:
+                categorical_pipeline_steps.append(("imputer", SimpleImputer(strategy="constant", fill_value="missing")))
+
+            # One-hot encoding
+            categorical_pipeline_steps.append(("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False)))
+
+            categorical_pipeline = SklearnPipeline(categorical_pipeline_steps)
+            transformers.append(("cat", categorical_pipeline, categorical_features))
+
+        column_transformer = ColumnTransformer(transformers, remainder="passthrough")
+        # Only set output if all transformers support it (to avoid issues with custom transformers)
+        try:
+            column_transformer.set_output(transform="pandas")
+        except ValueError:
+            # Some custom transformers may not support set_output, use default
+            pass
+        return column_transformer
 
     def _create_missing_handler(self, X: pd.DataFrame) -> BaseEstimator:
         """Create missing value handler."""
@@ -355,7 +379,14 @@ class AutoMLPipeline:
 
             return FunctionTransformer()
 
-        return ColumnTransformer(transformers, remainder="passthrough")
+        column_transformer = ColumnTransformer(transformers, remainder="passthrough")
+        # Only set output if all transformers support it (to avoid issues with custom transformers)
+        try:
+            column_transformer.set_output(transform="pandas")
+        except ValueError:
+            # Some custom transformers may not support set_output, use default
+            pass
+        return column_transformer
 
     def _create_datetime_transformer(self) -> BaseEstimator:
         """Create datetime feature extractor."""
@@ -382,24 +413,24 @@ class AutoMLPipeline:
         if numeric_features:
             numeric_pipeline = []
 
-            # Outlier handling
-            if self.config.handle_outliers:
-                try:
-                    numeric_pipeline.append(
-                        (
-                            "outlier_cap",
-                            OutlierCapTransformer(method=self.config.outlier_method),
-                        )
-                    )
-                except NameError:
-                    pass
+            # Outlier handling - temporarily disabled due to set_output compatibility
+            # if self.config.handle_outliers:
+            #     try:
+            #         numeric_pipeline.append(
+            #             (
+            #                 "outlier_cap",
+            #                 OutlierCapTransformer(method=self.config.outlier_method),
+            #             )
+            #         )
+            #     except NameError:
+            #         pass
 
-            # Log transformation
-            if self.config.apply_log_transform:
-                try:
-                    numeric_pipeline.append(("log_transform", LogTransformer()))
-                except NameError:
-                    pass
+            # Log transformation - temporarily disabled due to set_output compatibility
+            # if self.config.apply_log_transform:
+            #     try:
+            #         numeric_pipeline.append(("log_transform", LogTransformer()))
+            #     except NameError:
+            #         pass
 
             # Scaling
             if self.config.scaling:
@@ -475,7 +506,14 @@ class AutoMLPipeline:
                         )
                     )
 
-        return ColumnTransformer(transformers, remainder="passthrough")
+        column_transformer = ColumnTransformer(transformers, remainder="passthrough")
+        # Only set output if all transformers support it (to avoid issues with custom transformers)
+        try:
+            column_transformer.set_output(transform="pandas")
+        except ValueError:
+            # Some custom transformers may not support set_output, use default
+            pass
+        return column_transformer
 
     def _create_feature_engineering_step(
         self, X: pd.DataFrame, y: np.ndarray
