@@ -21,7 +21,7 @@ class TabularDataset(Dataset):
         if isinstance(X, pd.DataFrame):
             X = X.values
         if isinstance(y, pd.Series):
-            y = y.values
+            y = y.to_numpy()
 
         self.X = torch.FloatTensor(X)
         self.y = torch.FloatTensor(y) if y is not None else None

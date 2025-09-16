@@ -31,7 +31,7 @@ def to_tensor(
     """
     if isinstance(data, torch.Tensor):
         return data.to(device=device, dtype=dtype)
-    elif isinstance(data, (pd.DataFrame, pd.Series)):
+    elif isinstance(data, pd.DataFrame | pd.Series):
         return torch.tensor(data.values, device=device, dtype=dtype)
     elif isinstance(data, np.ndarray):
         return torch.tensor(data, device=device, dtype=dtype)

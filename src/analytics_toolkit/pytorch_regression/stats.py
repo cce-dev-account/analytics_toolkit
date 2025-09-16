@@ -2,6 +2,7 @@
 Statistical computation functions for PyTorch regression module.
 """
 
+
 import numpy as np
 import torch
 from scipy import stats
@@ -97,7 +98,7 @@ def compute_confidence_intervals(
     coef: torch.Tensor,
     std_errors: torch.Tensor,
     alpha: float = 0.05,
-    dof: int = None,
+    dof: int | None = None,
     distribution: str = "t",
 ) -> tuple[np.ndarray, np.ndarray]:
     """

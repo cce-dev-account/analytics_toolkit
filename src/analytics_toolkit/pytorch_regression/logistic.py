@@ -6,6 +6,7 @@ import warnings
 from typing import Any
 
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn.functional as F
 
@@ -61,8 +62,8 @@ class LogisticRegression(BaseRegression):
         )
 
         self.solver = solver
-        self.classes_ = None
-        self.n_iter_ = None
+        self.classes_: np.ndarray | None = None
+        self.n_iter_: int | None = None
 
         # Validate solver
         valid_solvers = ["lbfgs", "adam", "sgd"]
@@ -128,6 +129,8 @@ class LogisticRegression(BaseRegression):
             Computed loss value.
         """
         # Compute logits
+        if self.coef_ is None:
+            raise ValueError("Model coefficients not available")
         logits = torch.matmul(X, self.coef_)
 
         # Compute binary cross-entropy loss
@@ -140,6 +143,8 @@ class LogisticRegression(BaseRegression):
 
         # Add regularization penalty (exclude intercept)
         if self.penalty != "none":
+            if self.coef_ is None:
+                raise ValueError("Model coefficients not available")
             coef_to_regularize = self.coef_[1:] if self.fit_intercept else self.coef_
             regularization = self._get_regularization_penalty(coef_to_regularize)
             return bce_loss + regularization
@@ -170,6 +175,8 @@ class LogisticRegression(BaseRegression):
             Log-likelihood value.
         """
         with torch.no_grad():
+            if self.coef_ is None:
+                raise ValueError("Model coefficients not available")
             logits = torch.matmul(X, self.coef_)
 
             # Use log-sum-exp trick for numerical stability
@@ -215,6 +222,7 @@ class LogisticRegression(BaseRegression):
         self.coef_.requires_grad_(True)
 
         # Choose and set up optimizer
+        optimizer: torch.optim.LBFGS | torch.optim.Adam | torch.optim.SGD
         if self.solver == "lbfgs":
             optimizer = torch.optim.LBFGS(
                 [self.coef_],
@@ -241,12 +249,17 @@ class LogisticRegression(BaseRegression):
 
         for iteration in range(self.max_iter):
             if self.solver == "lbfgs":
-                optimizer.step(closure)
+                # LBFGS requires the closure function
+                # Use cast to ensure type safety while avoiding mypy issues
+                from typing import cast
+
+                lbfgs_opt = cast(torch.optim.LBFGS, optimizer)
+                lbfgs_opt.step(closure)  # type: ignore[misc]
             else:
                 optimizer.zero_grad()
                 loss = self._compute_loss(X_with_intercept, y_binary, sample_weight)
                 loss.backward()
-                optimizer.step()
+                optimizer.step()  # type: ignore[call-arg]
 
             # Check convergence
             with torch.no_grad():
@@ -261,7 +274,8 @@ class LogisticRegression(BaseRegression):
                 self.n_iter_ = iteration + 1
 
         # Detach coefficients
-        self.coef_ = self.coef_.detach()
+        if self.coef_ is not None:
+            self.coef_ = self.coef_.detach()
 
         # Check for convergence issues
         if self.n_iter_ == self.max_iter:
@@ -277,6 +291,8 @@ class LogisticRegression(BaseRegression):
     def _check_perfect_separation(self, X: torch.Tensor, y: torch.Tensor) -> None:
         """Check for perfect separation in logistic regression."""
         with torch.no_grad():
+            if self.coef_ is None:
+                raise ValueError("Model coefficients not available")
             predictions = torch.sigmoid(torch.matmul(X, self.coef_))
             predicted_classes = (predictions > 0.5).float()
 
@@ -288,10 +304,12 @@ class LogisticRegression(BaseRegression):
 
     def _predict_tensor(self, X: torch.Tensor) -> torch.Tensor:
         """Make probability predictions using torch tensors."""
+        if self.coef_ is None:
+            raise ValueError("Model coefficients not available")
         logits = torch.matmul(X, self.coef_)
         return torch.sigmoid(logits)
 
-    def predict_proba(self, X: np.ndarray | torch.Tensor) -> np.ndarray:
+    def predict_proba(self, X: np.ndarray | pd.DataFrame | torch.Tensor) -> np.ndarray:
         """
         Predict class probabilities.
 
@@ -319,7 +337,7 @@ class LogisticRegression(BaseRegression):
         probabilities = torch.stack([prob_negative, prob_positive], dim=1)
         return probabilities.cpu().numpy()
 
-    def predict(self, X: np.ndarray | torch.Tensor) -> np.ndarray:
+    def predict(self, X: np.ndarray | pd.DataFrame | torch.Tensor) -> np.ndarray:
         """
         Make binary class predictions.
 
@@ -341,6 +359,8 @@ class LogisticRegression(BaseRegression):
 
         # Convert to class predictions
         class_indices = np.argmax(probabilities, axis=1)
+        if self.classes_ is None:
+            raise ValueError("Model classes not available")
         return self.classes_[class_indices]
 
     def _compute_statistics(
@@ -376,6 +396,8 @@ class LogisticRegression(BaseRegression):
             self.standard_errors_ = compute_standard_errors(self.covariance_matrix_)
 
         # Compute model statistics
+        if self.coef_ is None:
+            raise ValueError("Model coefficients not available")
         n_params = len(self.coef_)
         model_stats = compute_model_statistics(
             y_binary,
@@ -411,6 +433,8 @@ class LogisticRegression(BaseRegression):
         try:
             with torch.no_grad():
                 # Compute predicted probabilities
+                if self.coef_ is None:
+                    raise ValueError("Model coefficients not available")
                 logits = torch.matmul(X, self.coef_)
                 probs = torch.sigmoid(logits)
 
@@ -454,6 +478,8 @@ class LogisticRegression(BaseRegression):
         """Get degrees of freedom (use normal distribution for large samples)."""
         # For logistic regression, we typically use z-distribution (normal)
         # But return dof for compatibility
+        if self.coef_ is None:
+            return 1
         return max(1, self.n_obs_ - len(self.coef_))
 
     def decision_function(self, X: np.ndarray | torch.Tensor) -> np.ndarray:
@@ -477,12 +503,16 @@ class LogisticRegression(BaseRegression):
         X_with_intercept = self._add_intercept(X_tensor)
 
         with torch.no_grad():
+            if self.coef_ is None:
+                raise ValueError("Model coefficients not available")
             logits = torch.matmul(X_with_intercept, self.coef_)
 
         return logits.cpu().numpy()
 
     def score(
-        self, X: np.ndarray | torch.Tensor, y: np.ndarray | torch.Tensor
+        self,
+        X: np.ndarray | pd.DataFrame | torch.Tensor,
+        y: np.ndarray | pd.Series | torch.Tensor,
     ) -> float:
         """
         Return the mean accuracy on the given test data and labels.
@@ -500,4 +530,11 @@ class LogisticRegression(BaseRegression):
             Mean accuracy.
         """
         y_pred = self.predict(X)
-        return self._compute_score(y, y_pred)
+        # Convert to numpy array if needed
+        if hasattr(y, "numpy"):
+            y_np = y.numpy()
+        elif hasattr(y, "values"):
+            y_np = y.values
+        else:
+            y_np = np.asarray(y)
+        return self._compute_score(y_np, y_pred)
