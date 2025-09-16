@@ -36,7 +36,7 @@ def advanced_transformers_example():
 
     # Apply log transformation to handle skewness
     log_transformer = LogTransformer(method="log1p")
-    X_log = log_transformer.fit_transform(X)
+    log_transformer.fit_transform(X)
     print("\nAfter log transformation - skewness reduced")
 
     # Cap outliers using IQR method

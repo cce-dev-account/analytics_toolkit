@@ -95,7 +95,7 @@ class TargetEncoder(BaseEstimator, TransformerMixin):
                     fold_encodings[category] = self.global_mean_
 
             # Apply encodings to validation fold
-            for i, val_i in enumerate(val_idx):
+            for _i, val_i in enumerate(val_idx):
                 category = column[val_i]
                 oof_encodings[val_i] = fold_encodings.get(category, self.global_mean_)
 
@@ -454,7 +454,7 @@ class OrdinalEncoderAdvanced(BaseEstimator, TransformerMixin):
                     and val.replace(".", "").replace("-", "").isdigit()
                 ):
                     numeric_values.append(float(val))
-                elif isinstance(val, (int, float)):
+                elif isinstance(val, int | float):
                     numeric_values.append(float(val))
                 else:
                     return False

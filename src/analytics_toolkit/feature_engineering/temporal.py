@@ -205,7 +205,9 @@ class LagFeatures(BaseEstimator, TransformerMixin):
         Value to fill initial NaN values
     """
 
-    def __init__(self, lags=[1, 2, 3], columns=None, fill_value=0):
+    def __init__(self, lags=None, columns=None, fill_value=0):
+        if lags is None:
+            lags = [1, 2, 3]
         self.lags = lags if isinstance(lags, list) else [lags]
         self.columns = columns
         self.fill_value = fill_value
@@ -269,11 +271,15 @@ class RollingFeatures(BaseEstimator, TransformerMixin):
 
     def __init__(
         self,
-        windows=[3, 7, 14],
-        statistics=["mean", "std", "min", "max"],
+        windows=None,
+        statistics=None,
         columns=None,
         min_periods=1,
     ):
+        if statistics is None:
+            statistics = ["mean", "std", "min", "max"]
+        if windows is None:
+            windows = [3, 7, 14]
         self.windows = windows if isinstance(windows, list) else [windows]
         self.statistics = statistics
         self.columns = columns
