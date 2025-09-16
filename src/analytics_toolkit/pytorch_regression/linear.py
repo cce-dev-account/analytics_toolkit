@@ -60,9 +60,9 @@ class LinearRegression(BaseRegression):
         )
 
         self.solver = solver
-        self.residual_std_ = None
-        self.r_squared_ = None
-        self.adj_r_squared_ = None
+        self.residual_std_: torch.Tensor | None = None
+        self.r_squared_: float | None = None
+        self.adj_r_squared_: float | None = None
 
     def _compute_loss(
         self,
@@ -88,6 +88,8 @@ class LinearRegression(BaseRegression):
             Computed loss value.
         """
         # Compute predictions
+        if self.coef_ is None:
+            raise ValueError("Model coefficients not available")
         predictions = torch.matmul(X, self.coef_)
 
         # Compute MSE loss
@@ -102,6 +104,8 @@ class LinearRegression(BaseRegression):
 
         # Add regularization penalty (exclude intercept)
         if self.penalty != "none":
+            if self.coef_ is None:
+                raise ValueError("Model coefficients not available")
             coef_to_regularize = self.coef_[1:] if self.fit_intercept else self.coef_
             regularization = self._get_regularization_penalty(coef_to_regularize)
             return mse_loss + regularization
@@ -228,7 +232,10 @@ class LinearRegression(BaseRegression):
             self._fit_iterative(X, y, sample_weight)
 
     def _fit_iterative(
-        self, X: torch.Tensor, y: torch.Tensor, sample_weight: torch.Tensor | None
+        self,
+        X: torch.Tensor,
+        y: torch.Tensor,
+        sample_weight: torch.Tensor | None = None,
     ) -> None:
         """
         Fit using iterative optimization (gradient descent).
@@ -274,10 +281,13 @@ class LinearRegression(BaseRegression):
                 prev_loss = current_loss
 
         # Detach coefficients
-        self.coef_ = self.coef_.detach()
+        if self.coef_ is not None:
+            self.coef_ = self.coef_.detach()
 
     def _predict_tensor(self, X: torch.Tensor) -> torch.Tensor:
         """Make predictions using torch tensors."""
+        if self.coef_ is None:
+            raise ValueError("Model coefficients not available")
         return torch.matmul(X, self.coef_)
 
     def _compute_statistics(
@@ -329,12 +339,16 @@ class LinearRegression(BaseRegression):
 
         # Adjusted R-squared
         n_obs = len(y)
+        if self.coef_ is None:
+            raise ValueError("Model coefficients not available")
         n_params = len(self.coef_)
         self.adj_r_squared_ = 1 - (1 - self.r_squared_) * (n_obs - 1) / (
             n_obs - n_params
         )
 
         # Log-likelihood (assuming normal errors)
+        if self.residual_std_ is None:
+            raise ValueError("Residual standard error not available")
         log_likelihood = -0.5 * n_obs * (
             np.log(2 * np.pi) + 2 * np.log(self.residual_std_.item())
         ) - 0.5 * ss_res / (self.residual_std_.item() ** 2)
@@ -403,6 +417,8 @@ class LinearRegression(BaseRegression):
 
     def _get_dof(self) -> int:
         """Get degrees of freedom for t-distribution."""
+        if self.coef_ is None:
+            return 1
         return max(1, self.n_obs_ - len(self.coef_))
 
     def predict_interval(
@@ -446,6 +462,10 @@ class LinearRegression(BaseRegression):
         # Var(y_new) = σ² * (1 + x_new^T * (X^T*X)^(-1) * x_new)
         with torch.no_grad():
             # Get covariance matrix in double precision for stability
+            if self.covariance_matrix_ is None:
+                raise ValueError("Covariance matrix not available")
+            if self.residual_std_ is None:
+                raise ValueError("Residual standard error not available")
             cov_matrix = self.covariance_matrix_.double()
             residual_var = self.residual_std_.item() ** 2
 
@@ -499,6 +519,8 @@ class LinearRegression(BaseRegression):
         residuals = y - y_pred
 
         if residual_type == "standardized":
+            if self.residual_std_ is None:
+                raise ValueError("Residual standard error not available")
             residuals = residuals / self.residual_std_.item()
 
         return residuals

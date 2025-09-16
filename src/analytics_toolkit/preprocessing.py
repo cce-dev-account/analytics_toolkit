@@ -55,6 +55,7 @@ class DataPreprocessor:
 
         # Scale numerical features
         if numerical_columns:
+            scaler: StandardScaler | MinMaxScaler
             if scaling_method == "standard":
                 scaler = StandardScaler()
             elif scaling_method == "minmax":
@@ -108,7 +109,8 @@ class DataPreprocessor:
                 # Handle new categories
                 data_copy[col] = data_copy[col].astype(str)
                 mask = data_copy[col].isin(encoder.classes_)
-                data_copy.loc[mask, col] = encoder.transform(data_copy.loc[mask, col])
+                # Type ignore for sklearn LabelEncoder return type issue
+                data_copy.loc[mask, col] = encoder.transform(data_copy.loc[mask, col].astype(str))  # type: ignore[assignment]
                 data_copy.loc[~mask, col] = -1  # Unknown category
 
         return data_copy

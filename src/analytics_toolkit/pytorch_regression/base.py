@@ -73,16 +73,16 @@ class BaseRegression(ABC, nn.Module):
 
         # Model state
         self.is_fitted_ = False
-        self.feature_names_ = None
-        self.n_features_in_ = None
-        self.coef_ = None
-        self.intercept_ = None
-        self.standard_errors_ = None
-        self.covariance_matrix_ = None
-        self.log_likelihood_ = None
-        self.aic_ = None
-        self.bic_ = None
-        self.encoding_mappings_ = {}
+        self.feature_names_: list[str] | None = None
+        self.n_features_in_: int | None = None
+        self.coef_: torch.Tensor | None = None
+        self.intercept_: torch.Tensor | None = None
+        self.standard_errors_: torch.Tensor | None = None
+        self.covariance_matrix_: torch.Tensor | None = None
+        self.log_likelihood_: float | None = None
+        self.aic_: float | None = None
+        self.bic_: float | None = None
+        self.encoding_mappings_: dict[str, dict[str, int]] = {}
 
         # Validation
         valid_penalties = ["none", "l1", "l2", "elastic_net"]
@@ -281,6 +281,8 @@ class BaseRegression(ABC, nn.Module):
         self._check_condition_number(X_with_intercept)
 
         # Fit the model
+        if y_tensor is None:
+            raise ValueError("Target variable y cannot be None")
         self._fit_model(X_tensor, y_tensor, sample_weight)
 
         # Compute statistical measures
@@ -360,6 +362,8 @@ class BaseRegression(ABC, nn.Module):
 
         if self.standard_errors_ is None:
             raise ValueError("Standard errors not available")
+        if self.coef_ is None:
+            raise ValueError("Model coefficients not available")
 
         lower, upper = compute_confidence_intervals(
             self.coef_, self.standard_errors_, alpha, self._get_dof()
@@ -380,26 +384,33 @@ class BaseRegression(ABC, nn.Module):
         if not self.is_fitted_:
             raise ValueError("Model must be fitted before generating summary")
 
+        if self.coef_ is None:
+            raise ValueError("Model coefficients not available")
+        if self.standard_errors_ is None:
+            raise ValueError("Standard errors not available")
+
         return format_summary_table(
             coef=self.coef_,
             std_err=self.standard_errors_,
             feature_names=self._get_feature_names(),
             model_stats={
-                "log_likelihood": self.log_likelihood_,
-                "aic": self.aic_,
-                "bic": self.bic_,
+                "log_likelihood": self.log_likelihood_ or 0.0,
+                "aic": self.aic_ or 0.0,
+                "bic": self.bic_ or 0.0,
                 "n_obs": self._get_n_obs(),
                 "n_params": len(self.coef_),
             },
             dof=self._get_dof(),
         )
 
-    def _get_feature_names(self) -> list:
+    def _get_feature_names(self) -> list[str]:
         """Get feature names including intercept."""
         if self.feature_names_ is not None:
             names = self.feature_names_.copy()
-        else:
+        elif self.n_features_in_ is not None:
             names = [f"x{i}" for i in range(self.n_features_in_)]
+        else:
+            names = []
 
         if self.fit_intercept:
             names = ["const"] + names
@@ -412,6 +423,8 @@ class BaseRegression(ABC, nn.Module):
 
     def _get_dof(self) -> int:
         """Get degrees of freedom (to be overridden by subclasses)."""
+        if self.coef_ is None:
+            return 1
         return max(1, self._get_n_obs() - len(self.coef_))
 
     def score(
@@ -438,7 +451,14 @@ class BaseRegression(ABC, nn.Module):
             raise ValueError("Model must be fitted before computing score")
 
         y_pred = self.predict(X)
-        return self._compute_score(y, y_pred)
+        # Convert to numpy array if needed
+        if hasattr(y, "numpy"):
+            y_np = y.numpy()
+        elif hasattr(y, "values"):
+            y_np = y.values
+        else:
+            y_np = np.asarray(y)
+        return self._compute_score(y_np, y_pred)
 
     @abstractmethod
     def _compute_score(self, y_true: np.ndarray, y_pred: np.ndarray) -> float:
