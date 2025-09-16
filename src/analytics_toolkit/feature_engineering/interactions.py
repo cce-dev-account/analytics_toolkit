@@ -74,7 +74,6 @@ class InteractionDetector(BaseEstimator, TransformerMixin):
 
         # Get baseline feature importance
         model.fit(X, y)
-        baseline_importance = model.feature_importances_
 
         interactions = []
 
@@ -275,10 +274,12 @@ class InteractionGenerator(BaseEstimator, TransformerMixin):
     def __init__(
         self,
         interactions=None,
-        interaction_types=["multiply", "add"],
+        interaction_types=None,
         max_interactions=100,
         include_self_interactions=False,
     ):
+        if interaction_types is None:
+            interaction_types = ["multiply", "add"]
         self.interactions = interactions
         self.interaction_types = interaction_types
         self.max_interactions = max_interactions

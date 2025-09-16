@@ -95,7 +95,7 @@ class TargetEncoder(BaseEstimator, TransformerMixin):
                     fold_encodings[category] = self.global_mean_
 
             # Apply encodings to validation fold
-            for i, val_i in enumerate(val_idx):
+            for _i, val_i in enumerate(val_idx):
                 category = column[val_i]
                 oof_encodings[val_i] = fold_encodings.get(category, self.global_mean_)
 
@@ -273,7 +273,9 @@ class FrequencyEncoder(BaseEstimator, TransformerMixin):
             else:
                 frequencies = counts
 
-            self.frequency_maps_[col_idx] = dict(zip(unique_values, frequencies, strict=False))
+            self.frequency_maps_[col_idx] = dict(
+                zip(unique_values, frequencies, strict=False)
+            )
 
         return self
 
@@ -423,7 +425,10 @@ class OrdinalEncoderAdvanced(BaseEstimator, TransformerMixin):
                 # Order by frequency
                 unique_values, counts = np.unique(column, return_counts=True)
                 ordered_categories = [
-                    x for _, x in sorted(zip(counts, unique_values, strict=False), reverse=True)
+                    x
+                    for _, x in sorted(
+                        zip(counts, unique_values, strict=False), reverse=True
+                    )
                 ]
             elif self.ordering == "alphabetical":
                 ordered_categories = sorted(unique_values)
@@ -449,7 +454,7 @@ class OrdinalEncoderAdvanced(BaseEstimator, TransformerMixin):
                     and val.replace(".", "").replace("-", "").isdigit()
                 ):
                     numeric_values.append(float(val))
-                elif isinstance(val, (int, float)):
+                elif isinstance(val, int | float):
                     numeric_values.append(float(val))
                 else:
                     return False

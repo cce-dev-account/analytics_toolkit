@@ -31,13 +31,15 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
 
     def __init__(
         self,
-        methods=["variance", "correlation", "mutual_info"],
+        methods=None,
         variance_threshold=0.01,
         correlation_threshold=0.95,
         mutual_info_k=50,
         recursive_estimator=None,
         task_type="auto",
     ):
+        if methods is None:
+            methods = ["variance", "correlation", "mutual_info"]
         self.methods = methods
         self.variance_threshold = variance_threshold
         self.correlation_threshold = correlation_threshold
@@ -204,7 +206,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin):
 
         from sklearn.linear_model import LassoCV, LogisticRegressionCV
 
-        for i in range(n_bootstrap):
+        for _i in range(n_bootstrap):
             # Bootstrap sample
             n_samples = X_selected.shape[0]
             bootstrap_idx = np.random.choice(n_samples, size=n_samples, replace=True)
