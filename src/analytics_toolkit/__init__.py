@@ -13,6 +13,24 @@ try:
 except ImportError:
     pytorch_regression = None
 
+feature_engineering: Any = None
+try:
+    from . import feature_engineering
+except ImportError:
+    feature_engineering = None
+
+automl: Any = None
+try:
+    from . import automl
+except ImportError:
+    automl = None
+
+visualization: Any = None
+try:
+    from . import visualization
+except ImportError:
+    visualization = None
+
 try:
     from .utils import *
 except ImportError:
@@ -38,5 +56,8 @@ __all__ = [
     "models",
     "preprocessing",
     "pytorch_regression",
+    "feature_engineering",
+    "automl",
+    "visualization",
     "ScorecardIntegrator",
 ]

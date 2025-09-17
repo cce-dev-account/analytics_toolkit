@@ -4,10 +4,15 @@ A comprehensive Python toolkit for data analytics and machine learning with PyTo
 
 ## Features
 
-- **Data Processing**: Comprehensive data loading, saving, and preprocessing utilities
-- **Machine Learning**: PyTorch-based neural networks and training utilities
-- **Analytics**: Statistical analysis and data description tools
-- **Quality**: Pre-commit hooks, testing, and code formatting
+- **🔧 Advanced Preprocessing**: Intelligent data cleaning, encoding, and scaling
+- **🔬 Feature Engineering**: Comprehensive transformations, selection, and interaction detection
+- **🧠 PyTorch Statistical Models**: Linear & logistic regression with full statistical inference
+- **🤖 AutoML Pipeline**: Automated model selection and hyperparameter optimization
+- **📊 Rich Visualizations**: Interactive plots, model diagnostics, and performance metrics
+- **🌐 Streamlit Web Interface**: Complete web-based UI for all capabilities
+- **📈 Model Analysis**: Statistical inference, confidence intervals, and model comparison
+- **🏦 Scorecard Integration**: Financial modeling and credit scoring capabilities
+- **⚡ Production Ready**: GPU acceleration, model persistence, and robust error handling
 
 ## Installation
 
@@ -23,38 +28,124 @@ poetry install --with dev
 
 ```
 analytics_toolkit/
-├── src/analytics_toolkit/    # Main package
-│   ├── __init__.py
-│   ├── utils.py             # Data utilities
-│   ├── preprocessing.py     # Data preprocessing
-│   └── models.py           # ML models and PyTorch utilities
-├── tests/                  # Test suite
-├── notebooks/              # Jupyter notebooks
-├── docs/                   # Documentation
-├── scripts/                # Utility scripts
-├── data/                   # Data files (gitignored)
-└── pyproject.toml         # Project configuration
+├── src/analytics_toolkit/           # Main package
+│   ├── __init__.py                 # Package initialization
+│   ├── utils.py                    # Data utilities
+│   ├── preprocessing.py            # Data preprocessing
+│   ├── models.py                   # Basic ML models and PyTorch utilities
+│   ├── scorecard_integration.py    # Financial scorecard modeling
+│   ├── pytorch_regression/         # Advanced PyTorch statistical models
+│   │   ├── linear.py              # Linear regression with inference
+│   │   ├── logistic.py            # Logistic regression with inference
+│   │   ├── advanced.py            # Polynomial, regularization, robust models
+│   │   ├── stats.py               # Statistical inference utilities
+│   │   └── transforms.py          # Advanced transformations
+│   ├── feature_engineering/        # Comprehensive feature engineering
+│   │   ├── encoding.py            # Categorical encoding strategies
+│   │   ├── selection.py           # Feature selection methods
+│   │   ├── transformers.py        # Data transformations
+│   │   ├── interactions.py        # Feature interactions
+│   │   └── temporal.py            # Time-based features
+│   ├── automl/                     # Automated ML pipeline
+│   │   ├── model_selection.py     # Automated model selection
+│   │   ├── hyperparameter_tuning.py # Hyperparameter optimization
+│   │   ├── pipeline_builder.py    # ML pipeline construction
+│   │   └── experiment_tracking.py # Experiment management
+│   └── visualization/              # Rich plotting and analysis
+│       ├── model_evaluation.py    # Model diagnostic plots
+│       ├── statistical.py         # Statistical visualizations
+│       ├── interactive.py         # Interactive dashboards
+│       ├── data_profiling.py      # Data exploration plots
+│       └── themes.py              # Consistent styling
+├── ui/                             # Streamlit web interface
+├── tests/                          # Comprehensive test suite
+├── examples/                       # Usage examples and demos
+├── docs/                           # Documentation
+└── streamlit_app.py               # Web application entry point
 ```
 
-## Usage
+## Quick Start
+
+### 🌐 Web Interface (Recommended)
+```bash
+# Start the Streamlit web application
+poetry run streamlit run streamlit_app.py
+```
+
+### 📊 Python API Usage
 
 ```python
-from analytics_toolkit import utils, preprocessing, models
+import analytics_toolkit as at
+import pandas as pd
 
-# Load and describe data
-data = utils.load_data('data.csv')
-description = utils.describe_data(data)
+# Load and explore data
+data = at.load_data('your_data.csv')
+description = at.describe_data(data)
 
-# Preprocess data
-preprocessor = preprocessing.DataPreprocessor()
-X_processed, y = preprocessor.fit_transform(data, target_column='target')
+# Advanced preprocessing with feature engineering
+from analytics_toolkit.feature_engineering import AdvancedScaler, TargetEncoder
+from analytics_toolkit.preprocessing import DataPreprocessor
 
-# Create and train a model
-model = models.SimpleNN(input_size=X_processed.shape[1],
-                       hidden_sizes=[64, 32],
-                       output_size=1)
-trainer = models.ModelTrainer(model)
+preprocessor = DataPreprocessor()
+encoder = TargetEncoder()
+scaler = AdvancedScaler(method='robust')
+
+# PyTorch statistical regression with full inference
+from analytics_toolkit.pytorch_regression import LinearRegression
+
+model = LinearRegression(fit_intercept=True, compute_stats=True)
+model.fit(X, y)
+
+# Get comprehensive results with p-values, confidence intervals
+summary = model.summary()
+print(summary)
+
+# AutoML pipeline for automated model selection
+from analytics_toolkit.automl import AutoMLPipeline
+
+automl = AutoMLPipeline(task_type='regression', time_limit=300)
+automl.fit(X_train, y_train)
+predictions = automl.predict(X_test)
+
+# Rich visualizations
+from analytics_toolkit.visualization import ModelEvaluationPlotter
+
+plotter = ModelEvaluationPlotter()
+plotter.plot_regression_diagnostics(model, X_test, y_test)
 ```
+
+## 🚀 Key Capabilities
+
+### 🧠 PyTorch Statistical Regression
+- **Full Statistical Inference**: Standard errors, t-statistics, p-values, confidence intervals
+- **Advanced Models**: Linear, logistic, polynomial, regularized (L1/L2/ElasticNet), robust regression
+- **GPU Acceleration**: CUDA support for large datasets
+- **Sklearn Compatible**: Drop-in replacement with enhanced statistics
+
+### 🔬 Feature Engineering
+- **Smart Transformations**: Log, Box-Cox, outlier handling, advanced scaling
+- **Categorical Encoding**: Target encoding, frequency encoding, Bayesian methods
+- **Feature Selection**: Correlation, mutual information, importance-based selection
+- **Interaction Detection**: Automated feature interaction discovery
+- **Temporal Features**: Date/time extraction, seasonality detection, lag features
+
+### 🤖 AutoML Pipeline
+- **Automated Model Selection**: Compare multiple algorithms automatically
+- **Hyperparameter Optimization**: Bayesian optimization with Optuna
+- **Pipeline Construction**: End-to-end ML pipeline building
+- **Experiment Tracking**: Comprehensive experiment management
+- **Time-Bounded Training**: Configurable training time limits
+
+### 📊 Rich Visualizations
+- **Model Diagnostics**: Residual plots, Q-Q plots, leverage analysis
+- **Performance Metrics**: ROC curves, precision-recall, feature importance
+- **Data Profiling**: Distribution analysis, correlation heatmaps, missing value patterns
+- **Interactive Dashboards**: Streamlit-powered web interface
+
+### 🏦 Financial Modeling
+- **Scorecard Integration**: Credit scoring and risk modeling
+- **Weighted Optimization**: Financial constraint handling
+- **Regulatory Compliance**: Statistical validation for financial models
 
 ## Development
 
