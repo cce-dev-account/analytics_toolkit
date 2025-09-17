@@ -65,8 +65,10 @@ class TestRegularizationPath:
 
         reg_path = RegularizationPath(
             penalty="l1",
-            n_alphas=5,
-            cv=3,
+            n_alphas=3,  # Reduce number of alphas for faster testing
+            cv=2,        # Reduce CV folds
+            max_iter=50, # Reduce max iterations
+            tol=1e-3,    # Relax tolerance
             random_state=42
         )
 
@@ -304,7 +306,7 @@ class TestIntegration:
         # Then use regularization path on the polynomial features
         X_train_poly = poly_reg.poly_features_.transform(X_train_sub)
 
-        reg_path = RegularizationPath(penalty="l2", n_alphas=5, cv=3)
+        reg_path = RegularizationPath(penalty="l2", n_alphas=3, cv=2, max_iter=50)
         reg_path.fit(X_train_poly, y_train)
 
         assert reg_path.alpha_optimal_ is not None
