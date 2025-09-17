@@ -18,19 +18,44 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
+# Import components with fallbacks
+MODEL_COMPARISON_AVAILABLE = True
+AVAILABLE_COMPONENTS = {}
+
 try:
     from analytics_toolkit.automl import AutoMLPipeline
+    AVAILABLE_COMPONENTS['AutoMLPipeline'] = AutoMLPipeline
+except ImportError:
+    pass
+
+try:
     from analytics_toolkit.pytorch_regression import LinearRegression, LogisticRegression
-    from analytics_toolkit.visualization import ModelEvaluationPlotter
+    AVAILABLE_COMPONENTS['LinearRegression'] = LinearRegression
+    AVAILABLE_COMPONENTS['LogisticRegression'] = LogisticRegression
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.visualization import ModelEvaluationPlots
+    AVAILABLE_COMPONENTS['ModelEvaluationPlots'] = ModelEvaluationPlots
+except ImportError:
+    try:
+        # Try alternative import names
+        from analytics_toolkit.visualization import ModelEvaluationPlotter
+        AVAILABLE_COMPONENTS['ModelEvaluationPlots'] = ModelEvaluationPlotter
+    except ImportError:
+        pass
+
+# Import sklearn components (should always be available)
+try:
     from sklearn.model_selection import cross_val_score, train_test_split
     from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
     from sklearn.linear_model import Ridge, Lasso, ElasticNet
     from sklearn.svm import SVR, SVC
     from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classification_report
-    MODEL_COMPARISON_AVAILABLE = True
 except ImportError as e:
     MODEL_COMPARISON_AVAILABLE = False
-    st.error(f"Model comparison dependencies not available: {e}")
+    st.error(f"Sklearn dependencies not available: {e}")
 
 def show():
     """Display the model comparison page."""

@@ -18,14 +18,43 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
+# Import components with fallbacks
+ADVANCED_VISUALIZATION_AVAILABLE = True
+AVAILABLE_VIZ_COMPONENTS = {}
+
 try:
-    from analytics_toolkit.visualization import ModelEvaluationPlotter, StatisticalPlotter
+    from analytics_toolkit.visualization import ModelEvaluationPlots
+    AVAILABLE_VIZ_COMPONENTS['ModelEvaluationPlots'] = ModelEvaluationPlots
+except ImportError:
+    try:
+        from analytics_toolkit.visualization import ModelEvaluationPlotter
+        AVAILABLE_VIZ_COMPONENTS['ModelEvaluationPlots'] = ModelEvaluationPlotter
+    except ImportError:
+        pass
+
+try:
+    from analytics_toolkit.visualization import StatisticalPlots
+    AVAILABLE_VIZ_COMPONENTS['StatisticalPlots'] = StatisticalPlots
+except ImportError:
+    try:
+        from analytics_toolkit.visualization import StatisticalPlotter
+        AVAILABLE_VIZ_COMPONENTS['StatisticalPlots'] = StatisticalPlotter
+    except ImportError:
+        pass
+
+try:
     from analytics_toolkit.pytorch_regression.stats import compute_model_statistics, format_summary_table
+    AVAILABLE_VIZ_COMPONENTS['compute_model_statistics'] = compute_model_statistics
+    AVAILABLE_VIZ_COMPONENTS['format_summary_table'] = format_summary_table
+except ImportError:
+    pass
+
+try:
     from sklearn.inspection import permutation_importance
     from sklearn.preprocessing import StandardScaler
-    ADVANCED_VISUALIZATION_AVAILABLE = True
 except ImportError as e:
     ADVANCED_VISUALIZATION_AVAILABLE = False
+    st.error(f"Required sklearn components not available: {e}")
 
 def show():
     """Display the results dashboard page."""

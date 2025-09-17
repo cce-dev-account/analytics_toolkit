@@ -17,18 +17,96 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
+# Import feature engineering components with fallbacks
+FEATURE_ENGINEERING_AVAILABLE = True
+AVAILABLE_TRANSFORMERS = {}
+
 try:
-    from analytics_toolkit.feature_engineering import (
-        AdvancedScaler, OutlierTransformer, DistributionTransformer, BinningTransformer,
-        CategoricalEncoder, TargetEncoder, FrequencyEncoder,
-        FeatureSelector, CorrelationSelector, ImportanceSelector,
-        FeatureInteractionDetector, PolynomialFeatureGenerator,
-        TemporalFeatureExtractor
-    )
-    FEATURE_ENGINEERING_AVAILABLE = True
-except ImportError as e:
+    from analytics_toolkit.feature_engineering import RobustScaler
+    AVAILABLE_TRANSFORMERS['RobustScaler'] = RobustScaler
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import OutlierCapTransformer
+    AVAILABLE_TRANSFORMERS['OutlierCapTransformer'] = OutlierCapTransformer
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import LogTransformer
+    AVAILABLE_TRANSFORMERS['LogTransformer'] = LogTransformer
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import BinningTransformer
+    AVAILABLE_TRANSFORMERS['BinningTransformer'] = BinningTransformer
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import TargetEncoder
+    AVAILABLE_TRANSFORMERS['TargetEncoder'] = TargetEncoder
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import FrequencyEncoder
+    AVAILABLE_TRANSFORMERS['FrequencyEncoder'] = FrequencyEncoder
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import BayesianTargetEncoder
+    AVAILABLE_TRANSFORMERS['BayesianTargetEncoder'] = BayesianTargetEncoder
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import FeatureSelector
+    AVAILABLE_TRANSFORMERS['FeatureSelector'] = FeatureSelector
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import CorrelationFilter
+    AVAILABLE_TRANSFORMERS['CorrelationFilter'] = CorrelationFilter
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import MutualInfoSelector
+    AVAILABLE_TRANSFORMERS['MutualInfoSelector'] = MutualInfoSelector
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import InteractionDetector
+    AVAILABLE_TRANSFORMERS['InteractionDetector'] = InteractionDetector
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import PolynomialInteractions
+    AVAILABLE_TRANSFORMERS['PolynomialInteractions'] = PolynomialInteractions
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import DateTimeFeatures
+    AVAILABLE_TRANSFORMERS['DateTimeFeatures'] = DateTimeFeatures
+except ImportError:
+    pass
+
+try:
+    from analytics_toolkit.feature_engineering import LagFeatures
+    AVAILABLE_TRANSFORMERS['LagFeatures'] = LagFeatures
+except ImportError:
+    pass
+
+if not AVAILABLE_TRANSFORMERS:
     FEATURE_ENGINEERING_AVAILABLE = False
-    st.error(f"Feature engineering module not available: {e}")
 
 def show():
     """Display the feature engineering page."""
@@ -156,13 +234,33 @@ def apply_distribution_transforms(data):
 
     if selected_cols and st.button("Apply Distribution Transform"):
         try:
-            transformer = DistributionTransformer(method=transform_method)
+            # Use LogTransformer for log transformations or sklearn transformers for others
+            if transform_method == "log1p":
+                transformer = LogTransformer()
+                transformed_data = st.session_state.feature_engineered_data.copy()
+                transformed_data[selected_cols] = transformer.fit_transform(
+                    transformed_data[selected_cols]
+                )
+            else:
+                # Fallback to sklearn transformers
+                from sklearn.preprocessing import PowerTransformer, QuantileTransformer
+                if transform_method == "box-cox":
+                    transformer = PowerTransformer(method='box-cox')
+                elif transform_method == "yeo-johnson":
+                    transformer = PowerTransformer(method='yeo-johnson')
+                else:  # quantile-uniform
+                    transformer = QuantileTransformer(output_distribution='uniform')
 
-            # Transform selected columns
-            transformed_data = st.session_state.feature_engineered_data.copy()
-            transformed_data[selected_cols] = transformer.fit_transform(
-                transformed_data[selected_cols]
-            )
+                transformed_data = st.session_state.feature_engineered_data.copy()
+                # Ensure positive values for box-cox
+                if transform_method == "box-cox":
+                    transformed_data[selected_cols] = transformer.fit_transform(
+                        transformed_data[selected_cols].abs() + 1e-8
+                    )
+                else:
+                    transformed_data[selected_cols] = transformer.fit_transform(
+                        transformed_data[selected_cols]
+                    )
 
             st.session_state.feature_engineered_data = transformed_data
             st.success(f"✅ Applied {transform_method} transformation to {len(selected_cols)} columns")
@@ -213,12 +311,35 @@ def apply_outlier_transforms(data):
 
     if selected_cols and st.button("Apply Outlier Handling"):
         try:
-            transformer = OutlierTransformer(method=outlier_method, threshold=threshold)
-
             transformed_data = st.session_state.feature_engineered_data.copy()
-            transformed_data[selected_cols] = transformer.fit_transform(
-                transformed_data[selected_cols]
-            )
+
+            if 'OutlierCapTransformer' in AVAILABLE_TRANSFORMERS:
+                transformer = AVAILABLE_TRANSFORMERS['OutlierCapTransformer'](method=outlier_method, threshold=threshold)
+                transformed_data[selected_cols] = transformer.fit_transform(
+                    transformed_data[selected_cols]
+                )
+            else:
+                # Fallback manual outlier handling
+                for col in selected_cols:
+                    if outlier_method == "iqr":
+                        Q1 = transformed_data[col].quantile(0.25)
+                        Q3 = transformed_data[col].quantile(0.75)
+                        IQR = Q3 - Q1
+                        lower_bound = Q1 - threshold * IQR
+                        upper_bound = Q3 + threshold * IQR
+                        transformed_data[col] = transformed_data[col].clip(lower_bound, upper_bound)
+                    elif outlier_method == "percentile":
+                        lower_percentile = (100 - 99) / 2
+                        upper_percentile = 100 - lower_percentile
+                        lower_bound = transformed_data[col].quantile(lower_percentile / 100)
+                        upper_bound = transformed_data[col].quantile(upper_percentile / 100)
+                        transformed_data[col] = transformed_data[col].clip(lower_bound, upper_bound)
+                    elif outlier_method == "zscore":
+                        mean = transformed_data[col].mean()
+                        std = transformed_data[col].std()
+                        lower_bound = mean - threshold * std
+                        upper_bound = mean + threshold * std
+                        transformed_data[col] = transformed_data[col].clip(lower_bound, upper_bound)
 
             st.session_state.feature_engineered_data = transformed_data
             st.success(f"✅ Applied {outlier_method} outlier handling to {len(selected_cols)} columns")
@@ -261,7 +382,20 @@ def apply_scaling_transforms(data):
 
     if selected_cols and st.button("Apply Scaling"):
         try:
-            scaler = AdvancedScaler(method=scaling_method)
+            # Use available custom scaler or sklearn fallback
+            if scaling_method == "robust" and 'RobustScaler' in AVAILABLE_TRANSFORMERS:
+                scaler = AVAILABLE_TRANSFORMERS['RobustScaler']()
+            else:
+                # Use sklearn scalers for all methods
+                from sklearn.preprocessing import StandardScaler, MinMaxScaler, QuantileTransformer, RobustScaler
+                if scaling_method == "standard":
+                    scaler = StandardScaler()
+                elif scaling_method == "minmax":
+                    scaler = MinMaxScaler()
+                elif scaling_method == "robust":
+                    scaler = RobustScaler()
+                else:  # quantile
+                    scaler = QuantileTransformer()
 
             transformed_data = st.session_state.feature_engineered_data.copy()
             transformed_data[selected_cols] = scaler.fit_transform(
@@ -397,7 +531,9 @@ def apply_feature_interactions(data):
         if st.button(f"Create {interaction_method.title()} Interactions"):
             try:
                 if interaction_method == "polynomial":
-                    generator = PolynomialFeatureGenerator(degree=degree)
+                    # Use sklearn PolynomialFeatures as fallback
+                    from sklearn.preprocessing import PolynomialFeatures
+                    generator = PolynomialFeatures(degree=degree, include_bias=False)
                     interactions = generator.fit_transform(data[numeric_cols[:5]])  # Limit columns
 
                     # Add interaction features
@@ -538,14 +674,16 @@ def apply_feature_selection(data):
             transformed_data = st.session_state.feature_engineered_data.copy()
 
             if selection_method == "variance_threshold":
-                selector = FeatureSelector(method="variance", threshold=threshold)
+                from sklearn.feature_selection import VarianceThreshold
+                selector = VarianceThreshold(threshold=threshold)
                 selected_features = selector.fit_transform(transformed_data[numeric_cols])
-                feature_names = selector.get_feature_names_out(numeric_cols)
+                feature_names = [col for col, mask in zip(numeric_cols, selector.get_support()) if mask]
 
             elif selection_method == "correlation_filter":
-                selector = CorrelationSelector(threshold=threshold)
+                # Use CorrelationFilter from our module
+                selector = CorrelationFilter(threshold=threshold)
                 selected_features = selector.fit_transform(transformed_data[numeric_cols])
-                feature_names = selector.get_feature_names_out(numeric_cols)
+                feature_names = selector.selected_features_ if hasattr(selector, 'selected_features_') else numeric_cols[:selected_features.shape[1]]
 
             elif selection_method == "mutual_info" and target_col:
                 from sklearn.feature_selection import mutual_info_regression
