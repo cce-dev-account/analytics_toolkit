@@ -28,9 +28,15 @@ try:
 except ImportError:
     pass
 
+try:
+    from .scorecard_integration import ScorecardIntegrator
+except ImportError:
+    ScorecardIntegrator = None
+
 __all__ = [
     "utils",
     "models",
     "preprocessing",
     "pytorch_regression",
+    "ScorecardIntegrator",
 ]
