@@ -149,12 +149,7 @@ def configure_preprocessing(data: pd.DataFrame) -> Dict[str, Any]:
         "Scaling method for numeric features",
         ['standard', 'minmax', 'robust', 'none'],
         index=0,
-        help={
-            'standard': 'StandardScaler: mean=0, std=1',
-            'minmax': 'MinMaxScaler: scale to [0,1]',
-            'robust': 'RobustScaler: median-based, less sensitive to outliers',
-            'none': 'No scaling applied'
-        }
+        help="Choose scaling method: Standard (mean=0, std=1), MinMax (scale to [0,1]), Robust (median-based), or None"
     )
 
     # Missing value handling
@@ -195,12 +190,7 @@ def configure_preprocessing(data: pd.DataFrame) -> Dict[str, Any]:
             "Encoding method for categorical features",
             ['label', 'onehot', 'target', 'frequency'],
             index=0,
-            help={
-                'label': 'Label Encoding: Simple numeric mapping',
-                'onehot': 'One-Hot Encoding: Binary columns for each category',
-                'target': 'Target Encoding: Mean target value per category',
-                'frequency': 'Frequency Encoding: Count-based encoding'
-            }
+            help="Choose encoding: Label (numeric mapping), One-Hot (binary columns), Target (mean target per category), or Frequency (count-based)"
         )
 
         # One-hot encoding specific options
@@ -227,12 +217,7 @@ def configure_preprocessing(data: pd.DataFrame) -> Dict[str, Any]:
             "Outlier detection and handling",
             ['none', 'iqr', 'z_score', 'isolation_forest'],
             index=0,
-            help={
-                'none': 'No outlier handling',
-                'iqr': 'Interquartile Range method',
-                'z_score': 'Z-score method (assumes normal distribution)',
-                'isolation_forest': 'Isolation Forest algorithm'
-            }
+            help="Choose outlier detection: None, IQR (interquartile range), Z-score (normal distribution), or Isolation Forest"
         )
 
         if config['outlier_method'] != 'none':
@@ -240,11 +225,7 @@ def configure_preprocessing(data: pd.DataFrame) -> Dict[str, Any]:
                 "Action for detected outliers",
                 ['cap', 'remove', 'transform'],
                 index=0,
-                help={
-                    'cap': 'Cap outliers to threshold values',
-                    'remove': 'Remove outlier rows',
-                    'transform': 'Apply log transformation'
-                }
+                help="Choose action: Cap (limit to threshold), Remove (delete rows), or Transform (apply log transformation)"
             )
 
             if config['outlier_method'] == 'iqr':

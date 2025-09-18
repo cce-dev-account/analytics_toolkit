@@ -274,7 +274,7 @@ def display_training_results(model):
             with st.expander("📊 Statistical Summary", expanded=False):
                 summary = model.summary()
                 st.code(summary, language=None)
-        except:
+        except (AttributeError, ValueError, TypeError) as e:
             st.info("Statistical summary not available")
 
     # Feature importance (coefficients)

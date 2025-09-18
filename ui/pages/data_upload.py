@@ -135,7 +135,7 @@ def display_data_overview(data: pd.DataFrame, data_source: str):
     else:
         preview_data = data.sample(min(show_rows, len(data)), random_state=42)
 
-    st.dataframe(preview_data, use_container_width=True)
+    st.dataframe(preview_data, width='stretch')
 
     # Column information
     st.markdown("### 📊 Column Information")
@@ -152,7 +152,7 @@ def display_data_overview(data: pd.DataFrame, data_source: str):
         })
 
     col_df = pd.DataFrame(col_info)
-    st.dataframe(col_df, use_container_width=True)
+    st.dataframe(col_df, width='stretch')
 
 
 def display_data_exploration(data: pd.DataFrame):
@@ -200,7 +200,7 @@ def display_distributions(data: pd.DataFrame):
                     marginal="box",
                     title=f"Distribution of {selected_numeric}"
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
                 # Basic statistics
                 st.markdown("**Statistics:**")
@@ -229,9 +229,9 @@ def display_distributions(data: pd.DataFrame):
                     y=value_counts.values,
                     title=f"Top 10 Values in {selected_categorical}"
                 )
-                fig.update_xaxis(title=selected_categorical)
-                fig.update_yaxis(title="Count")
-                st.plotly_chart(fig, use_container_width=True)
+                fig.update_xaxes(title=selected_categorical)
+                fig.update_yaxes(title="Count")
+                st.plotly_chart(fig, width='stretch')
 
                 # Category statistics
                 st.markdown("**Category Statistics:**")
@@ -271,7 +271,7 @@ def display_correlations(data: pd.DataFrame):
         height=600
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # Show highly correlated pairs
     st.markdown("#### 🔥 Highly Correlated Features")
@@ -292,7 +292,7 @@ def display_correlations(data: pd.DataFrame):
     if high_corr_pairs:
         corr_df = pd.DataFrame(high_corr_pairs)
         corr_df = corr_df.sort_values('Correlation', key=abs, ascending=False)
-        st.dataframe(corr_df, use_container_width=True)
+        st.dataframe(corr_df, width='stretch')
     else:
         st.info(f"No feature pairs found with correlation >= {threshold}")
 
@@ -326,10 +326,10 @@ def display_missing_data_analysis(data: pd.DataFrame):
             title="Missing Data by Column"
         )
         fig.update_xaxis(tickangle=45)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         # Missing data table
-        st.dataframe(missing_df, use_container_width=True)
+        st.dataframe(missing_df, width='stretch')
 
         # Missing data heatmap (for smaller datasets)
         if len(data) <= 1000:
@@ -342,7 +342,7 @@ def display_missing_data_analysis(data: pd.DataFrame):
                 title="Missing Data Pattern (Red = Missing)"
             )
             fig.update_layout(height=400)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
     else:
         st.success("🎉 No missing data found in the dataset!")
@@ -384,7 +384,7 @@ def display_target_analysis(data: pd.DataFrame):
                     marginal="box",
                     title=f"Target Distribution: {selected_target}"
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
             with col2:
                 # Target statistics
@@ -411,7 +411,7 @@ def display_target_analysis(data: pd.DataFrame):
                     names=class_counts.index,
                     title=f"Class Distribution: {selected_target}"
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
             with col2:
                 # Classification metrics
@@ -428,7 +428,7 @@ def display_target_analysis(data: pd.DataFrame):
                     'Count': class_counts.values,
                     'Percentage': (class_counts.values / len(target_data) * 100).round(1)
                 })
-                st.dataframe(class_df, use_container_width=True)
+                st.dataframe(class_df, width='stretch')
 
         # Store target selection in session state
         if st.button(f"✅ Set '{selected_target}' as Target Variable", type="primary"):
@@ -489,7 +489,7 @@ def display_data_quality_check(data: pd.DataFrame):
         st.warning(f"⚠️ Found {len(quality_issues)} data quality issues")
 
         quality_df = pd.DataFrame(quality_issues)
-        st.dataframe(quality_df, use_container_width=True)
+        st.dataframe(quality_df, width='stretch')
 
         st.markdown("**Recommendations:**")
         for issue in quality_issues:
