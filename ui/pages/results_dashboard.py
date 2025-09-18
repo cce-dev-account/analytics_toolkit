@@ -10,7 +10,6 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import sys
 import warnings
-from typing import Dict, Any, Optional
 warnings.filterwarnings('ignore')
 
 # Add src to path for imports
@@ -43,7 +42,9 @@ except ImportError:
         pass
 
 try:
-    from analytics_toolkit.pytorch_regression.stats import compute_model_statistics, format_summary_table
+    from analytics_toolkit.pytorch_regression.stats import (
+        compute_model_statistics, format_summary_table
+    )
     AVAILABLE_VIZ_COMPONENTS['compute_model_statistics'] = compute_model_statistics
     AVAILABLE_VIZ_COMPONENTS['format_summary_table'] = format_summary_table
 except ImportError:
@@ -51,7 +52,6 @@ except ImportError:
 
 try:
     from sklearn.inspection import permutation_importance
-    from sklearn.preprocessing import StandardScaler
 except ImportError as e:
     ADVANCED_VISUALIZATION_AVAILABLE = False
     st.error(f"Required sklearn components not available: {e}")
@@ -125,7 +125,7 @@ def show():
         display_performance_analysis_enhanced(model)
 
     with tab5:
-        display_advanced_analysis(model)
+        display_improvement_suggestions(model)
 
 
 def display_model_overview_enhanced(model, config):
@@ -137,11 +137,11 @@ def display_model_overview_enhanced(model, config):
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        model_name = config.get('model_name', type(model).__name__)
+        model_name = model_config.get('model_name', type(model).__name__)
         st.metric("🤖 Model Type", model_name)
 
     with col2:
-        task_type = config.get('model_type', 'Unknown').title()
+        task_type = model_config.get('model_type', 'Unknown').title()
         st.metric("🎯 Task Type", task_type)
 
     with col3:
@@ -183,7 +183,7 @@ def display_model_overview_enhanced(model, config):
                 try:
                     train_score = model.score(st.session_state.X_train, st.session_state.y_train)
                     st.markdown(f"• **Training Score**: {train_score:.4f}")
-                except:
+                except (AttributeError, ValueError, KeyError):
                     pass
 
     # Model summary for PyTorch models
@@ -273,11 +273,17 @@ def display_regression_summary(y_train, y_test, y_train_pred, y_test_pred):
     overfitting = train_r2 - test_r2
 
     if overfitting > 0.1:
-        insights.append("⚠️ **Overfitting detected**: Training performance significantly exceeds test performance")
+        insights.append(
+            "⚠️ **Overfitting detected**: Training performance significantly exceeds test performance"
+        )
     elif overfitting < -0.05:
-        insights.append("🔄 **Underfitting possible**: Test performance exceeds training performance")
+        insights.append(
+            "🔄 **Underfitting possible**: Test performance exceeds training performance"
+        )
     else:
-        insights.append("✅ **Good generalization**: Training and test performance are well-balanced")
+        insights.append(
+            "✅ **Good generalization**: Training and test performance are well-balanced"
+        )
 
     if abs(bias) > 0.1 * np.std(y_test):
         insights.append(f"📊 **Bias detected**: Model predictions are systematically {'high' if bias > 0 else 'low'}")
@@ -310,7 +316,7 @@ def display_classification_summary(y_train, y_test, y_train_pred, y_test_pred, m
         try:
             y_proba = model.predict_proba(st.session_state.X_test)[:, 1]
             auc = roc_auc_score(y_test, y_proba)
-        except:
+        except (AttributeError, ValueError, IndexError):
             pass
 
     # Display metrics
@@ -664,11 +670,12 @@ def display_performance_analysis_enhanced(model):
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        model_name = config.get('model_name', 'Unknown Model')
+        model_name = getattr(model, '__class__', type(model)).__name__
         st.metric("🤖 Model Type", model_name)
 
     with col2:
-        task_type = config.get('model_type', 'Unknown').title()
+        # Try to determine task type from model
+        task_type = "Classification" if hasattr(model, 'classes_') else "Regression"
         st.metric("🎯 Task Type", task_type)
 
     with col3:
@@ -930,7 +937,7 @@ def display_classification_plots(y_true, y_pred):
                              title="Prediction Probability Distribution",
                              nbins=30)
             st.plotly_chart(fig, width='stretch')
-        except:
+        except (AttributeError, ValueError, IndexError):
             pass
 
 def display_model_insights(model):

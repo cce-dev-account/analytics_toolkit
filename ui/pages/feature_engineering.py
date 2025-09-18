@@ -566,7 +566,7 @@ def apply_temporal_features(data):
             try:
                 pd.to_datetime(data[col].head(), errors='raise')
                 date_cols.append(col)
-            except:
+            except (ValueError, TypeError):
                 pass
 
     if not date_cols:
