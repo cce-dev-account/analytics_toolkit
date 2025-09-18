@@ -468,7 +468,7 @@ def display_regression_diagnostics_enhanced(y_true, y_pred):
     )
 
     fig.update_layout(height=800, title_text="Comprehensive Regression Diagnostics")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # Diagnostic insights
     st.markdown("#### 🔍 Diagnostic Insights")
@@ -538,7 +538,7 @@ def display_classification_diagnostics_enhanced(y_true, y_pred, model):
                 )
 
         fig.update_layout(annotations=annotations)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with col2:
         # Class distribution comparison
@@ -551,7 +551,7 @@ def display_classification_diagnostics_enhanced(y_true, y_pred, model):
         fig.add_trace(go.Bar(x=pred_counts.index, y=pred_counts.values,
                             name='Predicted Distribution', opacity=0.7))
         fig.update_layout(title="Class Distribution Comparison", barmode='group')
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     # ROC Curve and Precision-Recall for binary classification
     if len(np.unique(y_true)) == 2 and hasattr(model, 'predict_proba'):
@@ -576,7 +576,7 @@ def display_classification_diagnostics_enhanced(y_true, y_pred, model):
                     xaxis_title='False Positive Rate',
                     yaxis_title='True Positive Rate'
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
             with col2:
                 # Precision-Recall Curve
@@ -590,7 +590,7 @@ def display_classification_diagnostics_enhanced(y_true, y_pred, model):
                     xaxis_title='Recall',
                     yaxis_title='Precision'
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
 
         except Exception as e:
             st.warning(f"Could not generate ROC/PR curves: {str(e)}")
@@ -599,7 +599,7 @@ def display_classification_diagnostics_enhanced(y_true, y_pred, model):
     with st.expander("📋 Detailed Classification Report", expanded=False):
         report = classification_report(y_true, y_pred, output_dict=True)
         report_df = pd.DataFrame(report).transpose()
-        st.dataframe(report_df.round(4), use_container_width=True)
+        st.dataframe(report_df.round(4), width='stretch')
 
 
 def display_feature_analysis_enhanced(model):
@@ -617,16 +617,49 @@ def display_feature_analysis_enhanced(model):
     y_test = st.session_state.y_test
 
     # Feature importance analysis
-    display_feature_importance_comprehensive(model, X_train, y_train)
+    display_feature_importance_detailed(model)
 
     # Feature correlation analysis
-    display_feature_correlations(X_train)
+    st.markdown("#### 🔗 Feature Correlations")
+    try:
+        if hasattr(X_train, 'corr'):
+            corr_matrix = X_train.corr()
+            if len(corr_matrix) > 0:
+                fig = px.imshow(
+                    corr_matrix,
+                    text_auto=True,
+                    aspect="auto",
+                    title="Feature Correlation Heatmap"
+                )
+                st.plotly_chart(fig, width='stretch')
+            else:
+                st.info("No correlation data available")
+        else:
+            st.info("Correlation analysis not available for this data type")
+    except Exception as e:
+        st.warning(f"Could not display correlation analysis: {str(e)}")
 
     # Feature distribution analysis
-    display_feature_distributions(X_train, X_test)
-    """Display model overview information."""
+    st.markdown("#### 📊 Feature Distributions")
+    try:
+        numeric_features = X_train.select_dtypes(include=[np.number]).columns[:5]  # Limit to first 5
+        if len(numeric_features) > 0:
+            for feature in numeric_features:
+                fig = px.histogram(
+                    x=X_train[feature],
+                    title=f"Distribution of {feature}",
+                    nbins=30
+                )
+                st.plotly_chart(fig, width='stretch')
+        else:
+            st.info("No numeric features available for distribution analysis")
+    except Exception as e:
+        st.warning(f"Could not display feature distributions: {str(e)}")
 
-    st.markdown("### 🧠 Model Overview")
+
+def display_performance_analysis_enhanced(model):
+    """Display enhanced performance analysis."""
+    st.markdown("### 📊 Performance Analysis")
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -856,7 +889,7 @@ def display_regression_plots(y_true, y_pred):
     fig.update_xaxes(title_text="Predicted Values", row=1, col=2)
     fig.update_yaxes(title_text="Residuals", row=1, col=2)
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 def display_classification_plots(y_true, y_pred):
     """Display classification diagnostic plots."""
@@ -872,7 +905,7 @@ def display_classification_plots(y_true, y_pred):
         fig = px.imshow(cm, text_auto=True, aspect="auto",
                        title="Confusion Matrix",
                        labels=dict(x="Predicted", y="Actual"))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with col2:
         # Class distribution comparison
@@ -885,7 +918,7 @@ def display_classification_plots(y_true, y_pred):
         fig.add_trace(go.Bar(x=pred_counts.index, y=pred_counts.values,
                             name='Predicted Distribution', opacity=0.7))
         fig.update_layout(title="Class Distribution Comparison", barmode='group')
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     # Probability distribution (if available)
     if hasattr(st.session_state.trained_model, 'predict_proba'):
@@ -896,7 +929,7 @@ def display_classification_plots(y_true, y_pred):
             fig = px.histogram(x=y_proba[:, 1] if y_proba.shape[1] == 2 else y_proba.max(axis=1),
                              title="Prediction Probability Distribution",
                              nbins=30)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
         except:
             pass
 
@@ -952,7 +985,7 @@ def display_feature_importance_detailed(model):
             color_continuous_scale='RdBu_r'
         )
         fig.update_layout(height=500)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         # Feature importance insights
         col1, col2 = st.columns(2)
@@ -990,7 +1023,7 @@ def display_statistical_inference(model):
 
         st.dataframe(
             conf_display.style.apply(highlight_significant, axis=1),
-            use_container_width=True
+            width='stretch'
         )
 
         # Statistical summary
@@ -1039,9 +1072,9 @@ def display_improvement_suggestions(model):
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("⚖️ Compare with Other Models", use_container_width=True):
+        if st.button("⚖️ Compare with Other Models", width='stretch'):
             st.switch_page("pages/model_comparison.py")
 
     with col2:
-        if st.button("🔧 Retrain with Different Settings", use_container_width=True):
+        if st.button("🔧 Retrain with Different Settings", width='stretch'):
             st.switch_page("pages/model_training.py")
