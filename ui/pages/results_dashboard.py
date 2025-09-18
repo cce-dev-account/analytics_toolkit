@@ -92,6 +92,8 @@ def show():
 
             model_config = {'model_name': selected_model, 'model_type': model_result['problem_type']}
             model_available = True
+        else:
+            model_config = {}
 
     if not model_available:
         st.warning("🧠 No trained model available. Please train a model first.")
