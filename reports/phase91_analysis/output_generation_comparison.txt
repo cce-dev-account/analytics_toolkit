@@ -1,0 +1,31 @@
+================================================================================
+CODE COMPARISON REPORT
+================================================================================
+Generated: 2025-09-24T20:51:42.780749
+Source A: create_dashboard.py
+Source B: create_engaging_report.py
+
+OVERALL SIMILARITY
+----------------------------------------
+Overall Score:    0.000 (medium confidence)
+Structural:       0.642
+Interface:        0.000
+Semantic:         0.000
+
+DIFFERENCES SUMMARY
+----------------------------------------
+Total Differences: 0
+  Critical:        0
+  High:            0
+  Medium:          0
+  Low:             0
+
+LAYER ANALYSIS DETAILS
+----------------------------------------
+
+LAYER 0:
+  Directory Similarity: 1.000
+  File Similarity: 0.000
+  Size Similarity: 0.710
+  Organization Similarity: 1.000
+================================================================================

@@ -127,4 +127,5 @@ def check_module_availability():
 
 
 if __name__ == "__main__":
-    main()
+    main()# Test modification for Claude Code Index demo
+# Phase 2 test comment

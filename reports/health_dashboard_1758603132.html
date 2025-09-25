@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Health Dashboard</title>
+    <style>
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; margin: 0; padding: 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { border-bottom: 2px solid #333; margin-bottom: 30px; padding-bottom: 20px; }
+        h1 { color: #333; margin: 0; }
+        .generated-time { color: #666; margin: 5px 0; }
+        .toc { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+        .toc ul { list-style: none; padding: 0; }
+        .toc li { margin: 8px 0; }
+        .toc a { text-decoration: none; color: #0066cc; }
+        .toc a:hover { text-decoration: underline; }
+        section { margin-bottom: 40px; }
+        h2 { color: #333; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+        h3 { color: #555; }
+        .content-section { margin: 20px 0; }
+        .content-item { margin: 15px 0; }
+        .data-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .data-table td { padding: 8px; border: 1px solid #ddd; }
+        .data-table tr:nth-child(even) { background: #f9f9f9; }
+        .content-list { margin: 15px 0; }
+        .complex-item { margin: 10px 0; padding: 10px; background: #f8f8f8; border-radius: 4px; }
+        footer { border-top: 1px solid #ddd; margin-top: 50px; padding-top: 20px; color: #666; text-align: center; }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Code Health Dashboard</h1>
+            <p class="generated-time">Generated: 2025-09-23T05:52:12.434802</p>
+        </header>
+
+        <nav class="toc">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#health_score">Health Score</a></li>
+                <li><a href="#metrics_trend">Metrics Trend</a></li>
+                <li><a href="#top_issues">Top Issues (Auto-detected)</a></li>
+                <li><a href="#recent_improvements">Recent Improvements</a></li>
+            </ul>
+        </nav>
+
+        <main>
+            <section id="health_score">
+                <h2>Health Score</h2>
+                <div class='content-section'>
+                    <div class='content-item'>
+                        <h3>Overall Score</h3>
+                        <p>82</p>
+                    </div>
+                    <div class='content-item'>
+                        <h3>Grade</h3>
+                        <p>B+</p>
+                    </div>
+                    <div class='content-item'>
+                        <h3>Breakdown</h3>
+                        <table class='data-table'>
+                            <tr><td>code_quality</td><td>85</td></tr>
+                            <tr><td>test_coverage</td><td>76</td></tr>
+                            <tr><td>complexity</td><td>88</td></tr>
+                            <tr><td>documentation</td><td>72</td></tr>
+                            <tr><td>security</td><td>90</td></tr>
+                        </table>
+                    </div>
+                    <div class='content-item'>
+                        <h3>Trend</h3>
+                        <p>improving</p>
+                    </div>
+                </div>
+            </section>
+            <section id="metrics_trend">
+                <h2>Metrics Trend</h2>
+                <div class='content-section'>
+                    <div class='content-item'>
+                        <h3>Complexity</h3>
+                        <table class='data-table'>
+                            <tr><td>current</td><td>3.2</td></tr>
+                            <tr><td>period_ago</td><td>3.8</td></tr>
+                            <tr><td>change_percent</td><td>-16</td></tr>
+                            <tr><td>trend</td><td>down</td></tr>
+                        </table>
+                    </div>
+                    <div class='content-item'>
+                        <h3>Type Coverage</h3>
+                        <table class='data-table'>
+                            <tr><td>current</td><td>67</td></tr>
+                            <tr><td>period_ago</td><td>45</td></tr>
+                            <tr><td>change_percent</td><td>22</td></tr>
+                            <tr><td>trend</td><td>up</td></tr>
+                        </table>
+                    </div>
+                    <div class='content-item'>
+                        <h3>Test Coverage</h3>
+                        <table class='data-table'>
+                            <tr><td>current</td><td>76</td></tr>
+                            <tr><td>period_ago</td><td>72</td></tr>
+                            <tr><td>change_percent</td><td>4</td></tr>
+                            <tr><td>trend</td><td>up</td></tr>
+                        </table>
+                    </div>
+                    <div class='content-item'>
+                        <h3>Technical Debt Hours</h3>
+                        <table class='data-table'>
+                            <tr><td>current</td><td>127</td></tr>
+                            <tr><td>period_ago</td><td>145</td></tr>
+                            <tr><td>change_percent</td><td>-12</td></tr>
+                            <tr><td>trend</td><td>down</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <section id="top_issues">
+                <h2>Top Issues (Auto-detected)</h2>
+                <ul class='content-list'>
+                    <li class='complex-item'>
+                        <strong>type:</strong> Missing type hints<br>
+                        <strong>count:</strong> 234<br>
+                        <strong>effort:</strong> M<br>
+                        <strong>description:</strong> Functions missing type annotations<br>
+                    </li>
+                    <li class='complex-item'>
+                        <strong>type:</strong> Complex functions<br>
+                        <strong>count:</strong> 12<br>
+                        <strong>effort:</strong> L<br>
+                        <strong>description:</strong> Functions exceeding complexity threshold<br>
+                    </li>
+                    <li class='complex-item'>
+                        <strong>type:</strong> Duplicate code<br>
+                        <strong>count:</strong> 5<br>
+                        <strong>effort:</strong> S<br>
+                        <strong>description:</strong> Similar code blocks detected<br>
+                    </li>
+                </ul>
+            </section>
+            <section id="recent_improvements">
+                <h2>Recent Improvements</h2>
+                <ul class='content-list'>
+                    <li class='complex-item'>
+                        <strong>description:</strong> Fixed 47 type errors<br>
+                        <strong>impact:</strong> Improved type safety<br>
+                        <strong>completed_date:</strong> last week<br>
+                    </li>
+                    <li class='complex-item'>
+                        <strong>description:</strong> Reduced auth module complexity by 30%<br>
+                        <strong>impact:</strong> Better maintainability<br>
+                        <strong>completed_date:</strong> 2 weeks ago<br>
+                    </li>
+                    <li class='complex-item'>
+                        <strong>description:</strong> Added tests for payment processing<br>
+                        <strong>impact:</strong> Increased test coverage<br>
+                        <strong>completed_date:</strong> 3 weeks ago<br>
+                    </li>
+                </ul>
+            </section>
+        </main>
+
+        <footer>
+            <p>Report generated by Claude Code Index v0.2.0</p>
+            <p>Generation time: 0ms</p>
+        </footer>
+    </div>
+
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+
+            // Add search functionality
+            const searchBox = document.createElement('input');
+            searchBox.type = 'text';
+            searchBox.placeholder = 'Search report...';
+            searchBox.style.cssText = 'width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px;';
+
+            const toc = document.querySelector('.toc');
+            if (toc) {
+                toc.insertBefore(searchBox, toc.querySelector('ul'));
+
+                searchBox.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const sections = document.querySelectorAll('section');
+
+                    sections.forEach(section => {
+                        const text = section.textContent.toLowerCase();
+                        if (text.includes(searchTerm) || searchTerm === '') {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        });
+        
+    </script>
+</body>
+</html>

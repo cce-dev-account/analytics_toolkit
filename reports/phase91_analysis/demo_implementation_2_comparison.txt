@@ -1,0 +1,31 @@
+================================================================================
+CODE COMPARISON REPORT
+================================================================================
+Generated: 2025-09-24T20:51:42.823582
+Source A: examples\feature_engineering_examples.py
+Source B: examples\advanced_regression_demo.py
+
+OVERALL SIMILARITY
+----------------------------------------
+Overall Score:    0.000 (medium confidence)
+Structural:       0.663
+Interface:        0.000
+Semantic:         0.000
+
+DIFFERENCES SUMMARY
+----------------------------------------
+Total Differences: 0
+  Critical:        0
+  High:            0
+  Medium:          0
+  Low:             0
+
+LAYER ANALYSIS DETAILS
+----------------------------------------
+
+LAYER 0:
+  Directory Similarity: 1.000
+  File Similarity: 0.000
+  Size Similarity: 0.816
+  Organization Similarity: 1.000
+================================================================================

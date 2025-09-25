@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Toolkit - Report Gallery</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        .report-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        .report-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+        }
+        .report-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .report-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        .report-description {
+            color: #7f8c8d;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .report-features {
+            list-style: none;
+            padding: 0;
+        }
+        .report-features li {
+            color: #27ae60;
+            margin: 8px 0;
+            position: relative;
+            padding-left: 20px;
+        }
+        .report-features li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .launch-btn {
+            background: linear-gradient(45deg, #3498db, #2ecc71);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 15px;
+        }
+        .launch-btn:hover {
+            background: linear-gradient(45deg, #2980b9, #27ae60);
+            transform: scale(1.05);
+        }
+        .stats {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+            text-align: center;
+            color: white;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Analytics Toolkit</h1>
+            <p>Comprehensive Codebase Analysis Report Gallery</p>
+        </div>
+
+        <div class="stats">
+            <h2>Analysis Summary</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">73</span>
+                    <span class="stat-label">Python Files</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">307</span>
+                    <span class="stat-label">Dependencies</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">B+</span>
+                    <span class="stat-label">Health Grade</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">5</span>
+                    <span class="stat-label">Report Types</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="reports-grid">
+            <a href="analytics_toolkit_story.html" class="report-card">
+                <span class="report-icon">📖</span>
+                <h3 class="report-title">Story-Driven Report</h3>
+                <p class="report-description">
+                    An engaging, narrative-driven analysis that tells the story of your codebase with interactive charts and actionable insights.
+                </p>
+                <ul class="report-features">
+                    <li>Interactive Charts (Chart.js)</li>
+                    <li>Narrative Storytelling</li>
+                    <li>30-Day Action Plan</li>
+                    <li>Code Examples</li>
+                    <li>Modern Design</li>
+                </ul>
+                <div class="launch-btn">Open Story Report</div>
+            </a>
+
+            <a href="analytics_toolkit_dashboard.html" class="report-card">
+                <span class="report-icon">📊</span>
+                <h3 class="report-title">Metrics Dashboard</h3>
+                <p class="report-description">
+                    A visual dashboard with key metrics, health scores, and performance indicators presented in an easy-to-digest format.
+                </p>
+                <ul class="report-features">
+                    <li>Health Score Cards</li>
+                    <li>Pattern Analysis</li>
+                    <li>Dependency Overview</li>
+                    <li>Key Insights</li>
+                    <li>Responsive Layout</li>
+                </ul>
+                <div class="launch-btn">Open Dashboard</div>
+            </a>
+
+            <a href="analytics_toolkit_comprehensive_report.html" class="report-card">
+                <span class="report-icon">📋</span>
+                <h3 class="report-title">Technical Deep-Dive</h3>
+                <p class="report-description">
+                    A comprehensive technical analysis with detailed architecture overview, patterns, and dependencies for developers.
+                </p>
+                <ul class="report-features">
+                    <li>Architecture Analysis</li>
+                    <li>Component Mapping</li>
+                    <li>Design Patterns</li>
+                    <li>Dependency Graph</li>
+                    <li>Technical Details</li>
+                </ul>
+                <div class="launch-btn">Open Technical Report</div>
+            </a>
+
+            <a href="arch_overview_1758603132.html" class="report-card">
+                <span class="report-icon">🏗️</span>
+                <h3 class="report-title">Architecture Overview</h3>
+                <p class="report-description">
+                    Focused architectural analysis with system components, boundaries, and structural insights for technical teams.
+                </p>
+                <ul class="report-features">
+                    <li>System Components</li>
+                    <li>Architectural Boundaries</li>
+                    <li>Pattern Detection</li>
+                    <li>Structural Analysis</li>
+                    <li>Clean Format</li>
+                </ul>
+                <div class="launch-btn">Open Architecture</div>
+            </a>
+
+            <a href="health_dashboard_1758603132.html" class="report-card">
+                <span class="report-icon">💪</span>
+                <h3 class="report-title">Health Dashboard</h3>
+                <p class="report-description">
+                    Code health metrics, trends, and improvement recommendations to keep your codebase in optimal condition.
+                </p>
+                <ul class="report-features">
+                    <li>Health Metrics</li>
+                    <li>Trend Analysis</li>
+                    <li>Issue Detection</li>
+                    <li>Improvement Plans</li>
+                    <li>Quality Scores</li>
+                </ul>
+                <div class="launch-btn">Open Health Report</div>
+            </a>
+
+            <div class="report-card" style="background: #f8f9fa; border: 2px dashed #dee2e6;">
+                <span class="report-icon">🔧</span>
+                <h3 class="report-title">Generate Custom Report</h3>
+                <p class="report-description">
+                    Create custom reports with specific sections, formats, and focus areas using the Claude Code Index CLI commands.
+                </p>
+                <ul class="report-features">
+                    <li>Custom Sections</li>
+                    <li>Multiple Formats</li>
+                    <li>CLI Integration</li>
+                    <li>Automation Ready</li>
+                    <li>Flexible Output</li>
+                </ul>
+                <div class="launch-btn" style="background: #6c757d;">CLI Commands</div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 50px; color: white; opacity: 0.8;">
+            <p>Generated by Claude Code Index v0.2.0 - Phase 8 Report Generation System</p>
+            <p>September 23, 2025</p>
+        </div>
+    </div>
+</body>
+</html>
